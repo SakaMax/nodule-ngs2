@@ -9,8 +9,8 @@
 # create folder
 # ./folder_temp/folder_time
 folder_time=`date +%Y_%m%d_%H%M`
-folder_temp="tmp_file"
-folder_name="${folder_temp}/${folder_time}"
+folder_data="data"
+folder_name="${folder_data}/${folder_time}"
 
 # step 1
 # rename reads by tag and cut tag seqences
