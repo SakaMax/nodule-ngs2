@@ -12,6 +12,9 @@ unzip
 
 #install commands(for analysis)
 RUN conda install -c bioconda -y \
+pandas \
+numpy \
+matplotlib \
 fastp \
 blast \
 skesa && \
