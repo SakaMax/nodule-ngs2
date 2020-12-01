@@ -29,7 +29,7 @@ mkdir -p "${out_folder_name}/tag_removed" && python3 -m cutadapt --no-indels --d
 # remove primer
 echo "step 2"
 mkdir -p "${out_folder_name}/primer_removed" && python3 -m cutadapt --discard-untrimmed \
-    -g "file::${repo_dir}/source/R1primer.fasta" -G "file::${repo_dir}/source/R2primer.fasta" \
+    -g "file:${repo_dir}/source/R1primer.fasta" -G "file:${repo_dir}/source/R2primer.fasta" \
     -o "${out_folder_name}/primer_removed/R1.fastq" -p "${out_folder_name}/primer_removed/R2.fastq" \
     "${out_folder_name}/tag_removed/R1.fastq" "${out_folder_name}/tag_removed/R2.fastq"
 
