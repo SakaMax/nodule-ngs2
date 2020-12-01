@@ -7,27 +7,29 @@
 
 # Check where this script is.
 # see https://codechacha.com/ja/how-to-get-path-of-bash-script/
+# and https://qiita.com/koara-local/items/04d3efd1031ea62d8db5
 relative_dir=`dirname "$0"`
 canocnical_dir=`readlink -f $relative_dir`
+repo_dir=${canocnical_dir%/*}
 
 # create folder
 # ./folder_temp/folder_time
 folder_time=`date +%Y_%m%d_%H%M`
 folder_data="data"
-out_folder_name="${canocnical_dir}/${folder_data}/${folder_time}"
+out_folder_name="${repo_dir}/${folder_data}/${folder_time}"
 
 # step 1
 # rename reads by tag and cut tag seqences
 echo "step 1"
 mkdir -p "${out_folder_name}/tag_removed" && python3 -m cutadapt --no-indels --discard-untrimmed \
-    -g "file:${canocnical_dir}/source/R1tag.fasta" -G file:"${canocnical_dir}/source/R2tag.fasta" -y ' {name}' \
+    -g "file:${repo_dir}/source/R1tag.fasta" -G file:"${repo_dir}/source/R2tag.fasta" -y ' {name}' \
     -o "${out_folder_name}/tag_removed/R1.fastq" -p "${out_folder_name}/tag_removed/R2.fastq" $1 $2
     
 # step 2
 # remove primer
 echo "step 2"
 mkdir -p "${out_folder_name}/primer_removed" && python3 -m cutadapt --discard-untrimmed \
-    -g "file::${canocnical_dir}/source/R1primer.fasta" -G "file::${canocnical_dir}/source/R2primer.fasta" \
+    -g "file::${repo_dir}/source/R1primer.fasta" -G "file::${repo_dir}/source/R2primer.fasta" \
     -o "${out_folder_name}/primer_removed/R1.fastq" -p "${out_folder_name}/primer_removed/R2.fastq" \
     "${out_folder_name}/tag_removed/R1.fastq" "${out_folder_name}/tag_removed/R2.fastq"
 
