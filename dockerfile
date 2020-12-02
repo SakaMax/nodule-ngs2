@@ -8,7 +8,8 @@ wget \
 vim \
 git \
 nginx \
-unzip
+unzip \
+screen
 
 #install commands(for analysis)
 RUN conda install -c bioconda -y \
