@@ -55,3 +55,11 @@ fastp -i "${out_folder_name}/primer_removed/R1.fastq" -I "${out_folder_name}/pri
     |& tee -a $all_in_one_log
 cp "${out_folder_name}/fastp/report.html" /var/www/html/latest.html
 echo "Now you can find the report at <docker machine's IP>:8080/latest.html" |& tee -a $all_in_one_log
+
+# step 4
+# demultiplex(python)
+echo "----step 4: demultiplex" |& tee -a $all_in_one_log
+echo "This step may take a while." |& tee -a $all_in_one_log
+python ./script/demultiplex.py \
+    "${out_folder_name}/fastp/R1.fastq" "${out_folder_name}/fastp/R2.fastq" "${out_folder_name}" \
+    |& tee -a $all_in_one_log
