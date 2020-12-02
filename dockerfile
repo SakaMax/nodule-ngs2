@@ -15,6 +15,7 @@ RUN conda install -c bioconda -y \
 pandas \
 numpy \
 matplotlib \
+tqdm \
 fastp \
 blast \
 skesa && \
