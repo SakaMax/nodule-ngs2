@@ -1,10 +1,10 @@
 """Demultiplex paired-end fastq file after fastp.
 
 Example:
-    To run this, give three arguments: first_read, second_read, path_to_save_data.
-    When you demultiplex "R1.fastq" and "R2.fastq" and save data to "./mydata", type
+    To run this, give four arguments: first_read, second_read, cells.json, path_to_save_data.
+    When you demultiplex "R1.fastq" and "R2.fastq" depend on ./source/cells.json and save data to "./mydata", type
     ::
-        $ python demultiplex.py R1.fastq R2.fastq ./mydata
+        $ python demultiplex.py R1.fastq R2.fastq ./source/cells.json ./mydata
 
 Note:
     dependencies(numpy, pandas)
@@ -36,6 +36,7 @@ def get_args() -> argparse.Namespace:
     # all arguments are positional.
     parser.add_argument("R1", help="The first read (fastq file)")
     parser.add_argument("R2", help="The second read (fastq file)")
+    parser.add_argument("cells_json", help="path to cells.json")
     parser.add_argument("destination", help="path to output folder")
 
     # load arguments
@@ -55,7 +56,7 @@ def get_args() -> argparse.Namespace:
 if __name__ == "__main__":
     # Activate logging
     logging.basicConfig(
-        filename="log/demultiplex.log",
+        filename="demultiplex.log",
         format="%(levelname)s:%(message)s",
         level=logging.DEBUG
     )
@@ -68,7 +69,7 @@ if __name__ == "__main__":
         args = get_args()
 
         # Load cell name
-        with open("source/cells.json", 'rt') as f:
+        with open(args.cells_json, 'rt') as f:
             cells = json.load(f)
 
         # Read two fastq file
