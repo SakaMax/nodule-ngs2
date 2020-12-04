@@ -60,6 +60,13 @@ echo "Now you can find the report at <docker machine's IP>:8080/latest.html" |& 
 # demultiplex(python)
 echo "----step 4: demultiplex" |& tee -a $all_in_one_log
 echo "This step may take a while." |& tee -a $all_in_one_log
-python ./script/demultiplex.py \
-    "${out_folder_name}/fastp/R1.fastq" "${out_folder_name}/fastp/R2.fastq" "${out_folder_name}" \
+python "${repo_dir}/script/demultiplex.py" \
+    "${out_folder_name}/fastp/R1.fastq" "${out_folder_name}/fastp/R2.fastq" \
+    "${repo_dir}/source/cells.json" "${out_folder_name}" \
     |& tee -a $all_in_one_log
+
+# step 5
+# assemble(SKESA)
+echo "----step 5: assemble" |& tee -a $all_in_one_log
+echo "This step may take a while." |& tee -a $all_in_one_log
+python "${repo_dir}/script/skesa.py" "${out_folder_name}/cells" |& tee -a $all_in_one_log
