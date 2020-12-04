@@ -53,7 +53,7 @@ def get_args() -> argparse.Namespace:
 if __name__ == "__main__":
         # Activate logging
     logging.basicConfig(
-        filename="log/skesa.log",
+        filename="skesa.log",
         format="%(levelname)s:%(message)s",
         level=logging.DEBUG
     )
@@ -70,12 +70,13 @@ if __name__ == "__main__":
             for entry in tqdm(list(it)):
                 if entry.is_dir():
                     # Construct the path to the cell
-                    path = args.cells_path + entry.path.split('/')[-1]
+                    path = args.cells_path + '/' + entry.path.split('/')[-1]
                     # Construct command
                     command_line = [
                         "skesa",
                         "--fastq",
                         "{0}/R1.fastq,{0}/R2.fastq".format(path),
+                        "--use_paired_ends",
                         "--contigs_out",
                         "{}/contigs.fasta".format(path)
                     ]
