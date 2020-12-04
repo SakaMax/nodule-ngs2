@@ -19,6 +19,8 @@ matplotlib \
 tqdm \
 fastp \
 blast \
+megahit \
+spades \
 skesa && \
 python3 -m pip install --user --upgrade cutadapt
 
