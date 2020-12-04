@@ -4,3 +4,4 @@
 /data/
 fastp.json
 /log/
+*.log
