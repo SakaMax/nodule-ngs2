@@ -1,7 +1,7 @@
 #!/bin/bash
 # workflow for nodule amplicon NGS data V2
 # Usage:
-# all_in_one.sh R1.fastq.gz R2.fastq.gz 
+# all_in_one.sh R1.fastq.gz R2.fastq.gz <assembler>
 # Note:
 # You can look at the latest result of fastp in http://<address-to-machine>:80/latest.html
 
@@ -66,7 +66,7 @@ python "${repo_dir}/script/demultiplex.py" \
     |& tee -a $all_in_one_log
 
 # step 5
-# assemble(SKESA)
+# assemble($3)
 echo "----step 5: assemble" |& tee -a $all_in_one_log
 echo "This step may take a while." |& tee -a $all_in_one_log
-python "${repo_dir}/script/skesa.py" "${out_folder_name}/cells" |& tee -a $all_in_one_log
+python "${repo_dir}/script/${3}.py" "${out_folder_name}/cells" |& tee -a $all_in_one_log
