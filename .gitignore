@@ -5,3 +5,4 @@
 fastp.json
 /log/
 *.log
+*.pyc
