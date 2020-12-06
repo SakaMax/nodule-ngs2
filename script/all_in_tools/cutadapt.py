@@ -2,7 +2,7 @@ import logging
 import os
 from os import PathLike
 import subprocess
-from typing import Dict, NoReturn
+from typing import NoReturn
 
 def cutadapt_tag(
     R1_fastq: PathLike,
@@ -59,18 +59,23 @@ def cutadapt_tag(
         ]
         logger.debug("execute {}".format(command_line))
 
-
+        # variables for return of proc
+        msg = None
+        return_code = None
         try:
+            # execute proc
             proc = subprocess.Popen(
             command_line,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT
             )
+
+            # get return from proc
             msg = proc.stdout.read().decode()
-        except OSError as e:
             return_code = proc.wait()
-            logger.error(msg)
-            logger.error("cutadapt returns {}".format(return_code))
+        except OSError as e:
+            logger.error(msg) if msg else None
+            logger.error("cutadapt returns {}".format(return_code)) if return_code else None
             logger.exception(e)
             raise e
         else:
@@ -132,18 +137,24 @@ def cutadapt_primer(
         ]
         logger.debug("execute {}".format(command_line))
 
+        # variables for return of proc
+        msg = None
+        return_code = None
 
         try:
+            # execute proc
             proc = subprocess.Popen(
             command_line,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT
             )
+
+            # get return from proc
             msg = proc.stdout.read().decode()
-        except OSError as e:
             return_code = proc.wait()
-            logger.error(msg)
-            logger.error("cutadapt returns {}".format(return_code))
+        except OSError as e:
+            logger.error(msg) if msg else None
+            logger.error("cutadapt returns {}".format(return_code)) if return_code else None
             logger.exception(e)
             raise e
         else:
