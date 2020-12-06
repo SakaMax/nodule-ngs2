@@ -325,3 +325,13 @@ if __name__ == "__main__":
         report_dest=dir_path["report_dest"],
         settings=settings
     )
+
+    # STEP 4
+    # Demultiplex
+    logger.info("STEP 4: Demultiplex")
+    tools.demultiplex.demultiplex(
+        R1_fastq=fastq_path["fastp"]["R1"],
+        R2_fastq=fastq_path["fastp"]["R2"],
+        cells_json=settings["data"]["cells_json"],
+        destination=dir_path["destination"]
+    )
