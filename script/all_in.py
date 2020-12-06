@@ -103,12 +103,14 @@ def read_settings(yaml_path : str) -> dict:
     yaml = YAML(typ='safe')
 
     # load yaml file.
-    try:
-        with open(yaml_path, 'rt') as f:
-            user_settings = yaml.load(f)
-    except FileNotFoundError:
+    if yaml_path is not None:
+        try:
+            with open(yaml_path, 'rt') as f:
+                user_settings = yaml.load(f)
+        except FileNotFoundError:
+            user_settings = dict()
+    else:
         user_settings = dict()
-
 
     # load default yaml
     default_yaml_path = os.path.join(os.path.dirname(__file__),'default.yaml')
@@ -202,6 +204,7 @@ def construct_path(settings: dict, args: argparse.Namespace) -> Tuple[dict, dict
             os.path.abspath(__file__)
         ).split('/')[:-1]
     )
+    time_prefix = datetime.now().strftime(settings['data']['datetime_format'])
 
     # Path to directory
     dir_dict = {
@@ -216,7 +219,11 @@ def construct_path(settings: dict, args: argparse.Namespace) -> Tuple[dict, dict
         "destination" : os.path.join(
             repo_dir,
             settings['data']['destination'],
-            datetime.now().strftime(settings['data']['datetime_format'])
+            time_prefix
+        ),
+        "report_dest" : os.path.join(
+            settings["fastp_output"],
+            time_prefix
         )
     }
 
@@ -311,3 +318,10 @@ if __name__ == "__main__":
     # STEP 3
     # Quality filtering (fastp)
     logger.info("STEP 3: fastp")
+    tools.fastp.fastp(
+        R1_fastq=fastq_path["primer_removed"]["R1"],
+        R2_fastq=fastq_path["primer_removed"]["R2"],
+        destination=dir_path["destination"],
+        report_dest=dir_path["report_dest"],
+        settings=settings
+    )
