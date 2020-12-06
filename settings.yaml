@@ -24,22 +24,22 @@
 # all_in.py crush without readable log file,
 # because logging starts after the program loads this file.
 
-# # directory of log files
-# logging_path: ./log
+# directory of log files
+logging_path: ./log
 
-# # filename
-# filename: all_in.log
+# filename
+filename: all_in.log
 
-# # logging level: DEBUG | INFO | WARNING | ERROR
-# logging_level: DEBUG
+# logging level: DEBUG | INFO | WARNING | ERROR
+logfile_level: DEBUG
+console_level: INFO
 
-# # logging config (directly passed to logging.basicConfig)
-# logging_config: {
-
-#  filemode: w,
-#  format: " %(asctime)s: %(levelname)s(%(name)s):%(message)s",
-#  datefmt: "%Y/%m/%d %H:%M:%S",
-# }
+# logging config (directly passed to logging.basicConfig)
+logging_config: {
+ filemode: w,
+ format: " %(asctime)s: %(levelname)s(%(name)s):%(message)s",
+ datefmt: "%Y/%m/%d %H:%M:%S",
+}
 
 #===============================================================
 # data section
@@ -47,7 +47,7 @@
 # All path should be "relative" path from the repository directory.
 # data: {
 #   tag: ["source/R1tag.fasta", "source/R2tag.fasta"],
-#   primer: ["source/R1primer.fasta", "source.R2primer.fasta"],
+#   primer: ["source/R1primer.fasta", "source/R2primer.fasta"],
 #   destination: "data",
 #   datetime_format: "%Y_%m%d_%H%M",
 #   cells_json: "source/cells.json"
@@ -65,8 +65,9 @@
 #  "30",
 #  "-n",
 #  "5",
-#  "A"
+#  "-A"
 # ]
+# fastp_output: "/var/www/html"
 
 #===============================================================
 # assembler section
