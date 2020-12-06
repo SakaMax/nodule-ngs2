@@ -10,19 +10,17 @@ def cutadapt_tag(
     forward_tag: PathLike,
     reverse_tag: PathLike,
     destination: PathLike,
-    settings: Dict
 ) -> NoReturn:
     """Run cutadapt to recognize tag
 
     This function execute cutadapt and store tag-removed fastq in destination/tag_removed.
 
     Arguments:
-        R1_fastq(PathLike): path to the R1 sequence
-        R2_fastq(PathLike): path to the R2 sequence
+        R1_fastq(PathLike): path to the raw R1 sequence
+        R2_fastq(PathLike): path to the raw R2 sequence
         forward_tag(PathLike): path to the forward(R1) tag 
         reverse_tag(PathLike): path to the reverse(R2) tag
         destination(PathLike): path to the data folder
-        settings(dict): settings load from yaml
     """
     logger = logging.getLogger("all_in.cutadapt")
     logger.debug("cutadapt_tag called.")
@@ -80,6 +78,20 @@ def cutadapt_tag(
             logger.info(msg)
 
 def cutadapt_primer(
-
+    R1_fastq: PathLike,
+    R2_fastq: PathLike,
+    forward_primer: PathLike,
+    reverse_primer: PathLike,
+    destination: PathLike,
 ) -> NoReturn:
-    pass
+    """Run cutadapt to remove common primers
+
+    This function execute cutadapt and store primer-removed fastq in destination/primer_removed.
+
+    Arguments:
+        R1_fastq(PathLike): path to the raw R1 sequence
+        R2_fastq(PathLike): path to the raw R2 sequence
+        forward_tag(PathLike): path to the forward(R1) tag 
+        reverse_tag(PathLike): path to the reverse(R2) tag
+        destination(PathLike): path to the data folder
+    """
