@@ -32,8 +32,9 @@ import argparse
 from datetime import datetime
 import logging
 import os
+from pprint import pformat
 import sys
-from typing import NoReturn
+from typing import NoReturn, Tuple
 
 from ruamel.yaml import YAML
 
@@ -186,6 +187,84 @@ def set_logger(settings: dict, args: argparse.Namespace) -> logging.Logger:
 
     return logger
 
+def construct_path(settings: dict, args: argparse.Namespace) -> Tuple:
+    """Construct path to directories, fastq files.
+
+    arguments:
+        settings(dict): settings from yaml.
+        args(argparse.Namespace): arguments.
+    returns:
+        tuple(dict,dict): (dict of directory path, dict of fastq path)  
+    """
+
+    repo_dir = '/'.join(
+        os.path.dirname(
+            os.path.abspath(__file__)
+        ).split('/')[:-1]
+    )
+
+    # Path to directory
+    dir_dict = {
+        "repo" : repo_dir,
+        "tag" : [
+        os.path.join(repo_dir, tag) for tag in settings['data']['tag']
+        ],
+        "primer" : [
+        os.path.join(repo_dir, primer) for primer in settings['data']['primer']
+        ],
+        "cells" : os.path.join(repo_dir, settings['data']['cells_json']),
+        "destination" : os.path.join(
+            repo_dir,
+            settings['data']['destination'],
+            datetime.now().strftime(settings['data']['datetime_format'])
+        )
+    }
+
+    # Path to fastq
+    fastq_dict = {
+        "raw" : {
+            "R1" : args.R1, "R2" : args.R2
+        },
+        "tag_removed" : {
+            "R1" : [
+                os.path.join(
+                    dir_dict["destination"], "tag_removed", '.'.join(f.split('/')[-1].split('.')[0:2])
+                    ) for f in args.R1
+            ],
+            "R2" : [
+                os.path.join(
+                    dir_dict["destination"], "tag_removed", '.'.join(f.split('/')[-1].split('.')[0:2])
+                    ) for f in args.R2
+            ]
+        },
+        "primer_removed" : {
+            "R1" : [
+                os.path.join(
+                    dir_dict["destination"], "primer_removed", '.'.join(f.split('/')[-1].split('.')[0:2])
+                    ) for f in args.R1
+            ],
+            "R2" : [
+                os.path.join(
+                    dir_dict["destination"], "primer_removed", '.'.join(f.split('/')[-1].split('.')[0:2])
+                    ) for f in args.R2
+            ]
+        },
+        "fastp" : {
+            "R1" : [
+                os.path.join(
+                    dir_dict["destination"], "fastp", '.'.join(f.split('/')[-1].split('.')[0:2])
+                    ) for f in args.R1
+            ],
+            "R2" : [
+                os.path.join(
+                    dir_dict["destination"], "fastp", '.'.join(f.split('/')[-1].split('.')[0:2])
+                    ) for f in args.R2
+            ]
+        }
+    }
+
+    return dir_dict, fastq_dict
+
 if __name__ == "__main__":
     # read args
     args = get_args()
@@ -201,40 +280,34 @@ if __name__ == "__main__":
         "\n====\tThis is all_in.py for nodule NGS!\t===="
     )
 
-    # construct path:
-    # path to repository, tag, primer, cell list, data destination
-    repo_dir = '/'.join(
-        os.path.dirname(
-            os.path.abspath(__file__)
-        ).split('/')[:-1]
-    )
-    tag_path = [
-        os.path.join(repo_dir, tag) for tag in settings['data']['tag']
-    ]
-    primer_path = [
-        os.path.join(repo_dir, primer) for primer in settings['data']['primer']
-    ]
-    cells_path = os.path.join(repo_dir, settings['data']['cells_json'])
-    destination_path = os.path.join(
-        repo_dir,
-        settings['data']['destination'],
-        datetime.now().strftime(settings['data']['datetime_format'])
-    )
-    logger.debug(
-        """
-        repo        ->{}
-        tag         ->{}
-        primer      ->{}
-        cells       ->{}
-        destination ->{}""".format(
-            repo_dir, tag_path, primer_path, cells_path, destination_path
-        )
-    )
+    # construct path
+    dir_path, fastq_path = construct_path(settings, args)
+
+    logger.debug(pformat(dir_path))
+    logger.debug(pformat(fastq_path))
 
     # STEP 1
     # Recognition and removal of tag
     logger.info("STEP 1: cutadapt (for tag)")
     tools.cutadapt.cutadapt_tag(
-        args.R1, args.R2, tag_path[0], tag_path[1],
-        destination_path, settings
+        R1_fastq=fastq_path["raw"]["R1"],
+        R2_fastq=fastq_path["raw"]["R2"],
+        forward_tag=dir_path["tag"][0],
+        reverse_tag=dir_path["tag"][1],
+        destination=dir_path["destination"]
     )
+
+    # STEP 2
+    # Recognition and removal of primer
+    logger.info("STEP 2: cutadapt (for primer)")
+    tools.cutadapt.cutadapt_primer(
+        R1_fastq=fastq_path["tag_removed"]["R1"],
+        R2_fastq=fastq_path["tag_removed"]["R2"],
+        forward_primer=dir_path["primer"][0],
+        reverse_primer=dir_path["primer"][1],
+        destination=dir_path["destination"]
+    )
+
+    # STEP 3
+    # Quality filtering (fastp)
+    logger.info("STEP 3: fastp")

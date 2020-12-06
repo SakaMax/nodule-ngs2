@@ -51,7 +51,7 @@ logging_config: {
 # All path should be "relative" path from the repository directory.
 data: {
   tag: ["source/R1tag.fasta", "source/R2tag.fasta"],
-  primer: ["source/R1primer.fasta", "source.R2primer.fasta"],
+  primer: ["source/R1primer.fasta", "source/R2primer.fasta"],
   destination: "data",
   datetime_format: "%Y_%m%d_%H%M",
   cells_json: "source/cells.json"

@@ -89,9 +89,63 @@ def cutadapt_primer(
     This function execute cutadapt and store primer-removed fastq in destination/primer_removed.
 
     Arguments:
-        R1_fastq(PathLike): path to the raw R1 sequence
-        R2_fastq(PathLike): path to the raw R2 sequence
-        forward_tag(PathLike): path to the forward(R1) tag 
-        reverse_tag(PathLike): path to the reverse(R2) tag
+        R1_fastq(PathLike): path to the tag_removed R1 sequence
+        R2_fastq(PathLike): path to the tag_removed R2 sequence
+        forward_primer(PathLike): path to the forward(R1) tag 
+        reverse_primer(PathLike): path to the reverse(R2) tag
         destination(PathLike): path to the data folder
     """
+    logger = logging.getLogger("all_in.cutadapt")
+    logger.debug("cutadapt_primer called.")
+
+    # Prepare destination directory
+    primer_removed_path = os.path.join(
+        destination, "primer_removed"
+    )
+    if not os.path.exists(primer_removed_path):
+        os.makedirs(primer_removed_path)
+
+    # run cutadapt
+    for R1, R2 in zip(R1_fastq, R2_fastq):
+        # get filename
+        R1_name = R1.split('/')[-1].split('.')[0]
+        R2_name = R2.split('/')[-1].split('.')[0]
+        # Create command for cutadapt
+        command_line = [
+            "python3",
+            "-m",
+            "cutadapt",
+            "--no-indels",
+            "--discard-untrimmed",
+            "-g",
+            "file:{}".format(forward_primer),
+            "-G",
+            "file:{}".format(reverse_primer),
+            "-y",
+            r" {name}",
+            "-o",
+            "{}/primer_removed/{}.fastq".format(destination, R1_name),
+            "-p",
+            "{}/primer_removed/{}.fastq".format(destination, R2_name),
+            R1,
+            R2
+        ]
+        logger.debug("execute {}".format(command_line))
+
+
+        try:
+            proc = subprocess.Popen(
+            command_line,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT
+            )
+            msg = proc.stdout.read().decode()
+        except OSError as e:
+            return_code = proc.wait()
+            logger.error(msg)
+            logger.error("cutadapt returns {}".format(return_code))
+            logger.exception(e)
+            raise e
+        else:
+            return_code = proc.wait()
+            logger.info(msg)
