@@ -126,8 +126,6 @@ def cutadapt_primer(
             "file:{}".format(forward_primer),
             "-G",
             "file:{}".format(reverse_primer),
-            "-y",
-            r" {name}",
             "-o",
             "{}/primer_removed/{}.fastq".format(destination, R1_name),
             "-p",
