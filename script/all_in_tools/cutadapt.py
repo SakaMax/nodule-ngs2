@@ -1,26 +1,27 @@
 import logging
 import os
-from os import PathLike
 import subprocess
-from typing import List, NoReturn
+from typing import List, NoReturn, NewType
+
+PathStr = NewType('PathStr', str)
 
 def cutadapt_tag(
-    R1_fastq: List[PathLike],
-    R2_fastq: List[PathLike],
-    forward_tag: PathLike,
-    reverse_tag: PathLike,
-    destination: PathLike,
+    R1_fastq: List[PathStr],
+    R2_fastq: List[PathStr],
+    forward_tag: PathStr,
+    reverse_tag: PathStr,
+    destination: PathStr,
 ) -> NoReturn:
     """Run cutadapt to recognize tag
 
     This function execute cutadapt and store tag-removed fastq in destination/tag_removed.
 
     Arguments:
-        R1_fastq(list of PathLike): path to the raw R1 sequence
-        R2_fastq(list of PathLike): path to the raw R2 sequence
-        forward_tag(PathLike): path to the forward(R1) tag 
-        reverse_tag(PathLike): path to the reverse(R2) tag
-        destination(PathLike): path to the data folder
+        R1_fastq(list of PathStr): path to the raw R1 sequence
+        R2_fastq(list of PathStr): path to the raw R2 sequence
+        forward_tag(PathStr): path to the forward(R1) tag 
+        reverse_tag(PathStr): path to the reverse(R2) tag
+        destination(PathStr): path to the data folder
     """
     logger = logging.getLogger("all_in.cutadapt")
     logger.debug("cutadapt_tag called.")
@@ -83,22 +84,22 @@ def cutadapt_tag(
             logger.debug(msg)
 
 def cutadapt_primer(
-    R1_fastq: List[PathLike],
-    R2_fastq: List[PathLike],
-    forward_primer: PathLike,
-    reverse_primer: PathLike,
-    destination: PathLike,
+    R1_fastq: List[PathStr],
+    R2_fastq: List[PathStr],
+    forward_primer: PathStr,
+    reverse_primer: PathStr,
+    destination: PathStr,
 ) -> NoReturn:
     """Run cutadapt to remove common primers
 
     This function execute cutadapt and store primer-removed fastq in destination/primer_removed.
 
     Arguments:
-        R1_fastq(PathLike): path to the tag_removed R1 sequence
-        R2_fastq(PathLike): path to the tag_removed R2 sequence
-        forward_primer(PathLike): path to the forward(R1) tag 
-        reverse_primer(PathLike): path to the reverse(R2) tag
-        destination(PathLike): path to the data folder
+        R1_fastq(PathStr): path to the tag_removed R1 sequence
+        R2_fastq(PathStr): path to the tag_removed R2 sequence
+        forward_primer(PathStr): path to the forward(R1) tag 
+        reverse_primer(PathStr): path to the reverse(R2) tag
+        destination(PathStr): path to the data folder
     """
     logger = logging.getLogger("all_in.cutadapt")
     logger.debug("cutadapt_primer called.")

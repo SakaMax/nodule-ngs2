@@ -1,24 +1,25 @@
 import logging
 import os
-from os import PathLike
 import shutil
 import subprocess
-from typing import Dict, List, NoReturn
+from typing import Dict, List, NoReturn, NewType
+
+PathStr = NewType('PathStr', str)
 
 def fastp(
-    R1_fastq: List[PathLike],
-    R2_fastq: List[PathLike],
-    destination: PathLike,
-    report_dest: PathLike,
+    R1_fastq: List[PathStr],
+    R2_fastq: List[PathStr],
+    destination: PathStr,
+    report_dest: PathStr,
     settings: Dict,
 ) -> NoReturn:
     """Run fastp to quality filtering
 
     Arguments:
-        R1_fastq(PathLike): path to the primer_removed R1 sequence
-        R2_fastq(PathLike): path to the primer_removed R2 sequence
-        destination(PathLike): path to the data folder
-        report_dest(PathLike): path to the nginx html folder
+        R1_fastq(PathStr): path to the primer_removed R1 sequence
+        R2_fastq(PathStr): path to the primer_removed R2 sequence
+        destination(PathStr): path to the data folder
+        report_dest(PathStr): path to the nginx html folder
         settings(dict): settings from yaml
     """
 

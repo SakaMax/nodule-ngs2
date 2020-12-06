@@ -7,28 +7,29 @@ Note:
 from datetime import datetime
 import json
 import logging
-from os import PathLike
 import os
 import sys
-from typing import List, NoReturn
+from typing import List, NoReturn, NewType
 
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
+PathStr = NewType('PathStr', str)
+
 def demultiplex(
-    R1_fastq: List[PathLike],
-    R2_fastq: List[PathLike],
-    cells_json: PathLike,
-    destination: PathLike,
+    R1_fastq: List[PathStr],
+    R2_fastq: List[PathStr],
+    cells_json: PathStr,
+    destination: PathStr,
 ) -> NoReturn:
     """Demultiplex fastq file (after fastp)
 
     Arguments:
-        R1_fastq(PathLike): path to the after-fastp R1 sequence
-        R2_fastq(PathLike): path to the after-fastp R2 sequence
-        destination(PathLike): path to the data folder
-        cells_json(PathLike): path to ``cells.json``
+        R1_fastq(PathStr): path to the after-fastp R1 sequence
+        R2_fastq(PathStr): path to the after-fastp R2 sequence
+        destination(PathStr): path to the data folder
+        cells_json(PathStr): path to ``cells.json``
     """
 
     logger = logging.getLogger("all_in.demultiplex")
