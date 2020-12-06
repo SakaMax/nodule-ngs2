@@ -2,11 +2,11 @@ import logging
 import os
 from os import PathLike
 import subprocess
-from typing import NoReturn
+from typing import List, NoReturn
 
 def cutadapt_tag(
-    R1_fastq: PathLike,
-    R2_fastq: PathLike,
+    R1_fastq: List[PathLike],
+    R2_fastq: List[PathLike],
     forward_tag: PathLike,
     reverse_tag: PathLike,
     destination: PathLike,
@@ -16,8 +16,8 @@ def cutadapt_tag(
     This function execute cutadapt and store tag-removed fastq in destination/tag_removed.
 
     Arguments:
-        R1_fastq(PathLike): path to the raw R1 sequence
-        R2_fastq(PathLike): path to the raw R2 sequence
+        R1_fastq(list of PathLike): path to the raw R1 sequence
+        R2_fastq(list of PathLike): path to the raw R2 sequence
         forward_tag(PathLike): path to the forward(R1) tag 
         reverse_tag(PathLike): path to the reverse(R2) tag
         destination(PathLike): path to the data folder
@@ -83,8 +83,8 @@ def cutadapt_tag(
             logger.info(msg)
 
 def cutadapt_primer(
-    R1_fastq: PathLike,
-    R2_fastq: PathLike,
+    R1_fastq: List[PathLike],
+    R2_fastq: List[PathLike],
     forward_primer: PathLike,
     reverse_primer: PathLike,
     destination: PathLike,

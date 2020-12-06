@@ -187,7 +187,7 @@ def set_logger(settings: dict, args: argparse.Namespace) -> logging.Logger:
 
     return logger
 
-def construct_path(settings: dict, args: argparse.Namespace) -> Tuple:
+def construct_path(settings: dict, args: argparse.Namespace) -> Tuple[dict, dict]:
     """Construct path to directories, fastq files.
 
     arguments:
