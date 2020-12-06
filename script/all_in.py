@@ -71,6 +71,7 @@ def get_args() -> argparse.Namespace:
         "--assembler", "-a",
         help="assemble method",
         action="store",
+        dest="engine",
         choices=["skesa", "megahit", "spades"],
         default="megahit",
     )
@@ -334,4 +335,15 @@ if __name__ == "__main__":
         R2_fastq=fastq_path["fastp"]["R2"],
         cells_json=settings["data"]["cells_json"],
         destination=dir_path["destination"]
+    )
+
+    # STEP 5
+    # Assemble
+    logger.info("STEP 5: Assemble")
+    tools.assemble.assemble_all(
+        R1_name = [r1.split('/')[-1] for r1 in fastq_path["fastp"]["R1"]],
+        R2_name = [r2.split('/')[-1] for r2 in fastq_path["fastp"]["R2"]],
+        destination = dir_path["destination"],
+        assemble_engine = args.engine,
+        settings=settings
     )
