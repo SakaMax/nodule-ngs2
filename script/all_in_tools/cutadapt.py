@@ -80,7 +80,7 @@ def cutadapt_tag(
             raise e
         else:
             return_code = proc.wait()
-            logger.info(msg)
+            logger.debug(msg)
 
 def cutadapt_primer(
     R1_fastq: List[PathLike],
@@ -157,4 +157,4 @@ def cutadapt_primer(
             raise e
         else:
             return_code = proc.wait()
-            logger.info(msg)
+            logger.debug(msg)
