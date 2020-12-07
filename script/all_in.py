@@ -32,15 +32,16 @@ import argparse
 from datetime import datetime
 import logging
 import os
-from pprint import pformat
+import pickle
+from pprint import pformat, pprint
 import sys
-from typing import NoReturn, Tuple
+from typing import Dict, List, Callable, NoReturn, Tuple
 
 from ruamel.yaml import YAML
 
 import all_in_tools as tools
 
-def get_args() -> argparse.Namespace:
+def get_args() -> Dict:
     """Read given arguments.
 
     returns:
@@ -56,7 +57,6 @@ def get_args() -> argparse.Namespace:
         help="The first read of paired-end sequence (fastq file)",
         action='append',
         dest="R1",
-        required=True,
         metavar="R1.fastq"
     )
     parser.add_argument(
@@ -64,7 +64,6 @@ def get_args() -> argparse.Namespace:
         help="The second read of paired-end sequence (fastq file)",
         action='append',
         dest="R2",
-        required=True,
         metavar="R2.fastq"
     )
     parser.add_argument(
@@ -82,6 +81,14 @@ def get_args() -> argparse.Namespace:
         default=None,
         metavar="/path/to/settings.yaml"
     )
+    parser.add_argument(
+        "--resume_from", "-r",
+        help="resume from the previous checkpoint",
+        action="store",
+        dest="resume",
+        default=None,
+        metavar="/path/to/checkpoint.json"
+    )
 
     # load arguments
     # if parse_args failed, this raises SystemExit
@@ -91,7 +98,7 @@ def get_args() -> argparse.Namespace:
     # return args(Namespace)
     return args
 
-def read_settings(yaml_path : str) -> dict:
+def read_settings(yaml_path : str) -> Dict:
     """read ``settings.yaml`` from yaml_path.
 
     arguments:
@@ -273,84 +280,212 @@ def construct_path(settings: dict, args: argparse.Namespace) -> Tuple[dict, dict
 
     return dir_dict, fastq_dict
 
+class AllInContext():
+    """Keep status and progress of this script.
+
+    if ``--resume_from`` is specified,
+    this object retrieve self.__dict__ from the pickle file.
+    Otherwise, initializing process run normally.
+
+    Attributes:
+        args(Namespace): arguments from command line.
+        settings(dict): settings from yaml.
+        logger(Logger): logger(to CLI and file)
+        dir_path(dict): dict of path to directories
+        fastq_path(dict): dict of path to fastq sequences
+        step_counter(int): which step should this object run.
+    """
+    def __init__(self, args: argparse.Namespace) -> NoReturn:
+
+        # if checkpoint specified, use this
+        if args.resume is not None:
+            print("resume")
+            # Load objects
+            with open(args.resume, 'rb') as f:
+                self.__dict__ = pickle.load(f)
+            
+            # Set logger
+            self.logger = set_logger(self.settings, self.args)
+
+            # Greet
+            self.logger.info(
+                "\n====\tThis is all_in.py for nodule NGS!\t===="
+            )
+            self.logger.info(
+                "\n====\tProgram starts from the checkpoint {}\t====".format(args.resume)
+            )
+
+        # if the program starts from the beginning, setup as usual
+        else:
+            # Store arguments
+            self.args = args
+
+            # Check read
+            if (args.R1 == []) or (args.R2 == []) or (len(args.R1) != len(args.R2)):
+                print(
+                    "When the program start at the beginning, paired sequences must be given."
+                )
+                sys.exit(1)
+
+            # Load settings from yaml
+            self.settings = read_settings(args.settings)
+
+            # Construct path to each dir, each fastq
+            self.dir_path, self.fastq_path = construct_path(self.settings, args)
+
+            # Initialize the logger
+            self.logger = set_logger(self.settings, args)
+
+            # Set function list
+            self.step_func = [
+                self._step1,
+                self._step2,
+                self._step3,
+                self._step4,
+                self._step5,
+                self._step6
+            ]
+            self.step_name = [
+                "cutadapt(tag)",
+                "cutadapt(primer)",
+                "fastp",
+                "demultiplex",
+                "assemble(all)",
+                "assemble(separate)"
+            ]
+            
+            # Set counter
+            self.step_counter = 0
+
+            # Greet
+            self.logger.info(
+                "\n====\tThis is all_in.py for nodule NGS!\t===="
+            )
+
+        # Log current status
+        self.logger.debug(pformat(self.__dict__))
+
+    def create_checkpoint(self, path):
+        """Create pickle file.
+        """
+        if not os.path.exists(os.path.dirname(path)):
+            os.makedirs(os.path.dirname(path))
+
+        try:
+            with open(path, 'wb') as f:
+                pickle.dump(self.__dict__, f)
+        except Exception as e:
+            self.logger.exception(e)
+            raise e
+        else:
+            self.logger.info(
+        """
+        The checkpoint is created in {0}.
+        You can restart the program from this point.
+        For restart from here, use '--resume_from {0}'option.""".format(path)
+                )
+    
+    def run(self):
+        """Run workflow.
+
+        For each step, checkpoint is created after running.
+        """
+        start = self.step_counter
+        for func, count, name in zip(
+            self.step_func[start:len(self.step_func)],
+            range(start, len(self.step_func)),
+            self.step_name[start:len(self.step_func)]
+        ):
+            try:
+                self.logger.info("====STEP {}: {}====".format(count+1,name))
+                func()
+            except Exception as e:
+                self.logger.exception(e)
+                raise e
+            else:
+                self.logger.info("===={} end.====".format(name))
+                self.step_counter = count + 1
+                # Create the checkpoint after running func
+                checkpoint = os.path.join(self.dir_path["destination"], name)
+                self.create_checkpoint(checkpoint)
+
+    def _step1(self):
+        pass
+    def _step2(self):
+        pass
+    def _step3(self):
+        pass
+    def _step4(self):
+        pass
+    def _step5(self):
+        pass
+    def _step6(self):
+        pass
+
 if __name__ == "__main__":
     # read args
     args = get_args()
 
-    # read settings
-    settings = read_settings(args.settings)
+    # get context
+    context = AllInContext(args)
+    context.run()
+    # # STEP 1
+    # # Recognition and removal of tag
+    # logger.info("STEP 1: cutadapt (for tag)")
+    # tools.cutadapt.cutadapt_tag(
+    #     R1_fastq=fastq_path["raw"]["R1"],
+    #     R2_fastq=fastq_path["raw"]["R2"],
+    #     forward_tag=dir_path["tag"][0],
+    #     reverse_tag=dir_path["tag"][1],
+    #     destination=dir_path["destination"]
+    # )
 
-    # set up logging
-    logger = set_logger(settings, args)
+    # # STEP 2
+    # # Recognition and removal of primer
+    # logger.info("STEP 2: cutadapt (for primer)")
+    # tools.cutadapt.cutadapt_primer(
+    #     R1_fastq=fastq_path["tag_removed"]["R1"],
+    #     R2_fastq=fastq_path["tag_removed"]["R2"],
+    #     forward_primer=dir_path["primer"][0],
+    #     reverse_primer=dir_path["primer"][1],
+    #     destination=dir_path["destination"]
+    # )
 
-    # greet
-    logger.info(
-        "\n====\tThis is all_in.py for nodule NGS!\t===="
-    )
+    # # STEP 3
+    # # Quality filtering (fastp)
+    # logger.info("STEP 3: fastp")
+    # tools.fastp.fastp(
+    #     R1_fastq=fastq_path["primer_removed"]["R1"],
+    #     R2_fastq=fastq_path["primer_removed"]["R2"],
+    #     destination=dir_path["destination"],
+    #     report_dest=dir_path["report_dest"],
+    #     settings=settings
+    # )
 
-    # construct path
-    dir_path, fastq_path = construct_path(settings, args)
+    # # STEP 4
+    # # Demultiplex
+    # logger.info("STEP 4: Demultiplex")
+    # tools.demultiplex.demultiplex(
+    #     R1_fastq=fastq_path["fastp"]["R1"],
+    #     R2_fastq=fastq_path["fastp"]["R2"],
+    #     cells_json=settings["data"]["cells_json"],
+    #     destination=dir_path["destination"]
+    # )
 
-    logger.debug(pformat(dir_path))
-    logger.debug(pformat(fastq_path))
-
-    # STEP 1
-    # Recognition and removal of tag
-    logger.info("STEP 1: cutadapt (for tag)")
-    tools.cutadapt.cutadapt_tag(
-        R1_fastq=fastq_path["raw"]["R1"],
-        R2_fastq=fastq_path["raw"]["R2"],
-        forward_tag=dir_path["tag"][0],
-        reverse_tag=dir_path["tag"][1],
-        destination=dir_path["destination"]
-    )
-
-    # STEP 2
-    # Recognition and removal of primer
-    logger.info("STEP 2: cutadapt (for primer)")
-    tools.cutadapt.cutadapt_primer(
-        R1_fastq=fastq_path["tag_removed"]["R1"],
-        R2_fastq=fastq_path["tag_removed"]["R2"],
-        forward_primer=dir_path["primer"][0],
-        reverse_primer=dir_path["primer"][1],
-        destination=dir_path["destination"]
-    )
-
-    # STEP 3
-    # Quality filtering (fastp)
-    logger.info("STEP 3: fastp")
-    tools.fastp.fastp(
-        R1_fastq=fastq_path["primer_removed"]["R1"],
-        R2_fastq=fastq_path["primer_removed"]["R2"],
-        destination=dir_path["destination"],
-        report_dest=dir_path["report_dest"],
-        settings=settings
-    )
-
-    # STEP 4
-    # Demultiplex
-    logger.info("STEP 4: Demultiplex")
-    tools.demultiplex.demultiplex(
-        R1_fastq=fastq_path["fastp"]["R1"],
-        R2_fastq=fastq_path["fastp"]["R2"],
-        cells_json=settings["data"]["cells_json"],
-        destination=dir_path["destination"]
-    )
-
-    # STEP 5
-    # Assemble
-    logger.info("STEP 5: Assemble")
-    tools.assemble.assemble_all(
-        R1_name = [r1.split('/')[-1] for r1 in fastq_path["fastp"]["R1"]],
-        R2_name = [r2.split('/')[-1] for r2 in fastq_path["fastp"]["R2"]],
-        destination = dir_path["destination"],
-        assemble_engine = args.engine,
-        settings=settings
-    )
-    tools.assemble.assemble_individually(
-        R1_name = [r1.split('/')[-1] for r1 in fastq_path["fastp"]["R1"]],
-        R2_name = [r2.split('/')[-1] for r2 in fastq_path["fastp"]["R2"]],
-        destination = dir_path["destination"],
-        assemble_engine = args.engine,
-        settings=settings
-    )
+    # # STEP 5
+    # # Assemble
+    # logger.info("STEP 5: Assemble")
+    # tools.assemble.assemble_all(
+    #     R1_name = [r1.split('/')[-1] for r1 in fastq_path["fastp"]["R1"]],
+    #     R2_name = [r2.split('/')[-1] for r2 in fastq_path["fastp"]["R2"]],
+    #     destination = dir_path["destination"],
+    #     assemble_engine = args.engine,
+    #     settings=settings
+    # )
+    # tools.assemble.assemble_individually(
+    #     R1_name = [r1.split('/')[-1] for r1 in fastq_path["fastp"]["R1"]],
+    #     R2_name = [r2.split('/')[-1] for r2 in fastq_path["fastp"]["R2"]],
+    #     destination = dir_path["destination"],
+    #     assemble_engine = args.engine,
+    #     settings=settings
+    # )
