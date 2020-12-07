@@ -347,3 +347,10 @@ if __name__ == "__main__":
         assemble_engine = args.engine,
         settings=settings
     )
+    tools.assemble.assemble_individually(
+        R1_name = [r1.split('/')[-1] for r1 in fastq_path["fastp"]["R1"]],
+        R2_name = [r2.split('/')[-1] for r2 in fastq_path["fastp"]["R2"]],
+        destination = dir_path["destination"],
+        assemble_engine = args.engine,
+        settings=settings
+    )
