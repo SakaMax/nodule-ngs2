@@ -90,3 +90,33 @@ megahit: [
 ]
 
 # SPAdes parameters
+
+#===============================================================
+# blast section
+#===============================================================
+# Here are blastn options.
+# For more information, type 
+# $ blastn -help
+# in your shell.
+
+# blastn parameters
+blastn: [
+  "-task",
+  "blastn",
+  "-db",
+  "XXXX/XXXX"
+]
+blastn_header: [
+  qaccver,
+  saccver,
+  pident,
+  length,
+  mismatch,
+  gapopen,
+  qstart,
+  qend,
+  sstart,
+  send,
+  evalue,
+  bitscore
+]
