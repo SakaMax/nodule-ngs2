@@ -35,13 +35,13 @@ import os
 import pickle
 from pprint import pformat, pprint
 import sys
-from typing import Dict, List, Callable, NoReturn, Tuple
+from typing import Dict, List, Callable, NamedTuple, NoReturn, Tuple
 
 from ruamel.yaml import YAML
 
 import all_in_tools as tools
 
-def get_args() -> Dict:
+def get_args() -> argparse.Namespace:
     """Read given arguments.
 
     returns:
@@ -280,12 +280,21 @@ def construct_path(settings: dict, args: argparse.Namespace) -> Tuple[dict, dict
 
     return dir_dict, fastq_dict
 
-class AllInContext():
-    """Keep status and progress of this script.
+class WorkflowFunctionInfo(NamedTuple):
+    """The set of infomation AllIn.workflow_generator send.
 
-    if ``--resume_from`` is specified,
-    this object retrieve self.__dict__ from the pickle file.
-    Otherwise, initializing process run normally.
+    Attributes:
+        function(callable): work in this step
+        name(str): name of this step
+        step(int): which step?
+    """
+    function: Callable
+    name: str
+    step: int
+
+
+class AllIn():
+    """Run the script, hold status and progress of this script.
 
     Attributes:
         args(Namespace): arguments from command line.
@@ -296,99 +305,60 @@ class AllInContext():
         step_counter(int): which step should this object run.
     """
     def __init__(self, args: argparse.Namespace) -> NoReturn:
+        # Store arguments
+        self.args = args
 
-        # if checkpoint specified, use this
-        if args.resume is not None:
-            print("resume")
-            # Load objects
-            with open(args.resume, 'rb') as f:
-                self.__dict__ = pickle.load(f)
-            
-            # Set logger
-            self.logger = set_logger(self.settings, self.args)
-
-            # Greet
-            self.logger.info(
-                "\n====\tThis is all_in.py for nodule NGS!\t===="
+        # Check read
+        if (args.R1 == []) or (args.R2 == []) or (len(args.R1) != len(args.R2)):
+            print(
+                "When the program start at the beginning, paired sequences must be given."
             )
-            self.logger.info(
-                "\n====\tProgram starts from the checkpoint {}\t====".format(args.resume)
-            )
+            sys.exit(1)
 
-        # if the program starts from the beginning, setup as usual
-        else:
-            # Store arguments
-            self.args = args
+        # Load settings from yaml
+        self.settings = read_settings(args.settings)
 
-            # Check read
-            if (args.R1 == []) or (args.R2 == []) or (len(args.R1) != len(args.R2)):
-                print(
-                    "When the program start at the beginning, paired sequences must be given."
-                )
-                sys.exit(1)
+        # Construct path to each dir, each fastq
+        self.dir_path, self.fastq_path = construct_path(self.settings, args)
 
-            # Load settings from yaml
-            self.settings = read_settings(args.settings)
+        # Initialize the logger
+        self.logger = set_logger(self.settings, args)
 
-            # Construct path to each dir, each fastq
-            self.dir_path, self.fastq_path = construct_path(self.settings, args)
+        # Set function list
+        self.step_func = [
+            self._step1,
+            self._step2,
+            self._step3,
+            self._step4,
+            self._step5,
+            self._step6
+        ]
+        self.step_name = [
+            "cutadapt_tag",
+            "cutadapt_primer",
+            "fastp",
+            "demultiplex",
+            "assemble_all",
+            "assemble_separete"
+        ]
+        
+        # Set counter
+        self.step_counter = 0
 
-            # Initialize the logger
-            self.logger = set_logger(self.settings, args)
-
-            # Set function list
-            self.step_func = [
-                self._step1,
-                self._step2,
-                self._step3,
-                self._step4,
-                self._step5,
-                self._step6
-            ]
-            self.step_name = [
-                "cutadapt(tag)",
-                "cutadapt(primer)",
-                "fastp",
-                "demultiplex",
-                "assemble(all)",
-                "assemble(separate)"
-            ]
-            
-            # Set counter
-            self.step_counter = 0
-
-            # Greet
-            self.logger.info(
-                "\n====\tThis is all_in.py for nodule NGS!\t===="
-            )
+        # Greet
+        self.logger.info(
+            "\n====\tThis is all_in.py for nodule NGS!\t===="
+        )
 
         # Log current status
         self.logger.debug(pformat(self.__dict__))
-
-    def create_checkpoint(self, path):
-        """Create pickle file.
-        """
-        if not os.path.exists(os.path.dirname(path)):
-            os.makedirs(os.path.dirname(path))
-
-        try:
-            with open(path, 'wb') as f:
-                pickle.dump(self.__dict__, f)
-        except Exception as e:
-            self.logger.exception(e)
-            raise e
-        else:
-            self.logger.info(
-        """
-        The checkpoint is created in {0}.
-        You can restart the program from this point.
-        For restart from here, use '--resume_from {0}'option.""".format(path)
-                )
     
-    def run(self):
-        """Run workflow.
+    def workflow_generator(self) -> WorkflowFunctionInfo:
+        """Yield dict about workflow function.
 
-        For each step, checkpoint is created after running.
+        returns:
+
+
         """
         start = self.step_counter
         for func, count, name in zip(
@@ -396,40 +366,174 @@ class AllInContext():
             range(start, len(self.step_func)),
             self.step_name[start:len(self.step_func)]
         ):
-            try:
-                self.logger.info("====STEP {}: {}====".format(count+1,name))
-                func()
-            except Exception as e:
-                self.logger.exception(e)
-                raise e
-            else:
-                self.logger.info("===={} end.====".format(name))
-                self.step_counter = count + 1
-                # Create the checkpoint after running func
-                checkpoint = os.path.join(self.dir_path["destination"], name)
-                self.create_checkpoint(checkpoint)
+            print("before yield {}".format(name))
+            # yield {
+            #     "function": func,
+            #     "name" : name,
+            #     "step": count+1
+            # }
+            yield WorkflowFunctionInfo(
+                function=func,
+                name=name,
+                step=count+1,
+            )
+            print("after yield {}".format(name))
+            self.step_counter = count + 1
+            # try:
+            #     self.logger.info("====STEP {}: {}====".format(count+1,name))
+            #     func()
+            # except Exception as e:
+            #     self.logger.exception(e)
+            #     raise e
+            # else:
+            #     self.logger.info("===={} end.====".format(name))
+            #     self.step_counter = count + 1
+            #     yield self.step_counter
 
     def _step1(self):
-        pass
+        """Cutadapt for tag recognition
+        
+        """
+        tools.cutadapt.cutadapt_tag(
+            R1_fastq=self.fastq_path["raw"]["R1"],
+            R2_fastq=self.fastq_path["raw"]["R2"],
+            forward_tag=self.dir_path["tag"][0],
+            reverse_tag=self.dir_path["tag"][1],
+            destination=self.dir_path["destination"]
+        )
+
     def _step2(self):
-        pass
+        """Cutadapt for common primer
+        """
+        tools.cutadapt.cutadapt_primer(
+            R1_fastq=self.fastq_path["tag_removed"]["R1"],
+            R2_fastq=self.fastq_path["tag_removed"]["R2"],
+            forward_primer=self.dir_path["primer"][0],
+            reverse_primer=self.dir_path["primer"][1],
+            destination=self.dir_path["destination"]
+        )
+
     def _step3(self):
-        pass
+        """Quality filtering by fastp
+        """
+        tools.fastp.fastp(
+            R1_fastq=self.fastq_path["primer_removed"]["R1"],
+            R2_fastq=self.fastq_path["primer_removed"]["R2"],
+            destination=self.dir_path["destination"],
+            report_dest=self.dir_path["report_dest"],
+            settings=self.settings
+        )
+
     def _step4(self):
-        pass
+        """Demultiplex
+        """
+        tools.demultiplex.demultiplex(
+            R1_fastq=self.fastq_path["fastp"]["R1"],
+            R2_fastq=self.fastq_path["fastp"]["R2"],
+            cells_json=self.settings["data"]["cells_json"],
+            destination=self.dir_path["destination"]
+        )
+
     def _step5(self):
-        pass
+        """Assemble (Using all sequences at one time)
+        """
+        tools.assemble.assemble_all(
+            R1_name = [r1.split('/')[-1] for r1 in self.fastq_path["fastp"]["R1"]],
+            R2_name = [r2.split('/')[-1] for r2 in self.fastq_path["fastp"]["R2"]],
+            destination = self.dir_path["destination"],
+            assemble_engine = self.args.engine,
+            settings=self.settings
+        )
+
     def _step6(self):
-        pass
+        tools.assemble.assemble_individually(
+            R1_name = [r1.split('/')[-1] for r1 in self.fastq_path["fastp"]["R1"]],
+            R2_name = [r2.split('/')[-1] for r2 in self.fastq_path["fastp"]["R2"]],
+            destination = self.dir_path["destination"],
+            assemble_engine = self.args.engine,
+            settings=self.settings
+        )
+
+class AllInManager():
+    """Load/Save AllIn and run AllIn's workflow
+
+    Attributes:
+        args(Namespace): arguments from stdin
+        _all_in(AllIn): actual scripts and its status
+    """
+    def __init__(self, args: dict) -> None:
+        self.args = args
+
+        if args.resume is not None:
+            # resume point
+            with open(args.resume, 'rb') as f:
+                self._all_in = pickle.load(f)
+
+            # re-setup logger
+            self._all_in.logger = set_logger(
+                self._all_in.settings, self._all_in.args
+            )
+            self._all_in.logger.info("All_In resumed")
+        else:
+            # new start
+            self._all_in = AllIn(args)
+            self._all_in.logger.info("All_In intialized")
+
+    def run(self):
+        """Run the script
+        """
+        # step_info is WorkflowFunctionInfo.
+        # for each step,
+        # - save current status
+        # - log step No. and name
+        # - run the step
+        # - report exception if it occurs
+        # - log end of the step
+        for step_info in self._all_in.workflow_generator():
+            self._create_checkpoint("before_" + step_info.name)
+            try:
+                self._all_in.logger.info(
+                    "====step {}: {}====".format(
+                        step_info.step, step_info.name)
+                    )
+                step_info.function()
+            except Exception as e:
+                self._all_in.logger.exception(e)
+            else:
+                self._all_in.logger.info("step {} end".format(step_info.step))
+        else:
+            # Create checkpoint for test
+            self._create_checkpoint("after_all")
+            
+    def _create_checkpoint(self, name):
+        """Save self._all_in to 'destination/name.checkpoint'
+
+        Arguments:
+            name(str): name of the checkpoint
+        """
+        if not os.path.exists(self._all_in.dir_path["destination"]):
+            os.makedirs(self._all_in.dir_path["destination"])
+        
+        chk_path = os.path.join(
+            self._all_in.dir_path["destination"], name + ".checkpoint"
+        )
+        with open(chk_path, 'wb') as f:
+            pickle.dump(self._all_in, f)
 
 if __name__ == "__main__":
     # read args
     args = get_args()
 
-    # get context
-    context = AllInContext(args)
-    context.run()
-    # # STEP 1
+    # Get AllInManager:
+    # Inside this, manager creates AllIn (if there is no checkpoint in arguments) or
+    # loads AllIn (otherwise)
+    manager = AllInManager(args)
+
+    # Start actual script
+    # Before each step, the manager automatically create checkpoints
+    manager.run()
+
+        # # STEP 1
     # # Recognition and removal of tag
     # logger.info("STEP 1: cutadapt (for tag)")
     # tools.cutadapt.cutadapt_tag(
