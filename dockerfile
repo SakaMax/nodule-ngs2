@@ -9,7 +9,9 @@ vim \
 git \
 nginx \
 unzip \
-screen
+libyaml-dev &&\
+apt-get clean && \
+rm -rf /var/lib/apt/lists/*
 
 #install commands(for analysis)
 RUN conda install -c bioconda -y \
@@ -22,23 +24,21 @@ blast \
 megahit \
 spades \
 skesa && \
-python3 -m pip install --user --upgrade cutadapt
+python3 -m pip install --user --upgrade cutadapt ruamel.yaml && \
+conda clean -a
 
 #create working folder
 RUN mkdir /ngs
 
-
 #open port
 EXPOSE 80
 
-#set alias
-RUN echo 'alias ll="ls -l"' >> ~/.bashrc
-RUN echo 'alias la="ls -a"' >> ~/.bashrc
-
-#entry point
+#set alias and create entry point
 #activate nginx and execute whatever the container recieved
-RUN echo "#!/bin/bash" >> /entry.sh
-RUN echo "nginx" >> /entry.sh
-RUN echo "exec \$@" >> /entry.sh
-RUN chmod 755 /entry.sh
+RUN echo 'alias ll="ls -l"' >> ~/.bashrc && \
+echo 'alias la="ls -a"' >> ~/.bashrc &&\
+echo "#!/bin/bash" >> /entry.sh && \
+echo "nginx" >> /entry.sh && \
+echo "exec \$@" >> /entry.sh && \
+chmod 755 /entry.sh
 ENTRYPOINT [ "/entry.sh" ]

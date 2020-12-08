@@ -4,4 +4,8 @@
 /data/
 fastp.json
 /log/
+/html/
 *.log
+*.pyc
+*.pickle
+settings.yaml
