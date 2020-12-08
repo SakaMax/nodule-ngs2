@@ -504,7 +504,7 @@ class AllInManager():
         else:
             # Create checkpoint for test
             self._create_checkpoint("after_all")
-            
+
     def _create_checkpoint(self, name):
         """Save self._all_in to 'destination/name.checkpoint'
 
@@ -532,64 +532,3 @@ if __name__ == "__main__":
     # Start actual script
     # Before each step, the manager automatically create checkpoints
     manager.run()
-
-        # # STEP 1
-    # # Recognition and removal of tag
-    # logger.info("STEP 1: cutadapt (for tag)")
-    # tools.cutadapt.cutadapt_tag(
-    #     R1_fastq=fastq_path["raw"]["R1"],
-    #     R2_fastq=fastq_path["raw"]["R2"],
-    #     forward_tag=dir_path["tag"][0],
-    #     reverse_tag=dir_path["tag"][1],
-    #     destination=dir_path["destination"]
-    # )
-
-    # # STEP 2
-    # # Recognition and removal of primer
-    # logger.info("STEP 2: cutadapt (for primer)")
-    # tools.cutadapt.cutadapt_primer(
-    #     R1_fastq=fastq_path["tag_removed"]["R1"],
-    #     R2_fastq=fastq_path["tag_removed"]["R2"],
-    #     forward_primer=dir_path["primer"][0],
-    #     reverse_primer=dir_path["primer"][1],
-    #     destination=dir_path["destination"]
-    # )
-
-    # # STEP 3
-    # # Quality filtering (fastp)
-    # logger.info("STEP 3: fastp")
-    # tools.fastp.fastp(
-    #     R1_fastq=fastq_path["primer_removed"]["R1"],
-    #     R2_fastq=fastq_path["primer_removed"]["R2"],
-    #     destination=dir_path["destination"],
-    #     report_dest=dir_path["report_dest"],
-    #     settings=settings
-    # )
-
-    # # STEP 4
-    # # Demultiplex
-    # logger.info("STEP 4: Demultiplex")
-    # tools.demultiplex.demultiplex(
-    #     R1_fastq=fastq_path["fastp"]["R1"],
-    #     R2_fastq=fastq_path["fastp"]["R2"],
-    #     cells_json=settings["data"]["cells_json"],
-    #     destination=dir_path["destination"]
-    # )
-
-    # # STEP 5
-    # # Assemble
-    # logger.info("STEP 5: Assemble")
-    # tools.assemble.assemble_all(
-    #     R1_name = [r1.split('/')[-1] for r1 in fastq_path["fastp"]["R1"]],
-    #     R2_name = [r2.split('/')[-1] for r2 in fastq_path["fastp"]["R2"]],
-    #     destination = dir_path["destination"],
-    #     assemble_engine = args.engine,
-    #     settings=settings
-    # )
-    # tools.assemble.assemble_individually(
-    #     R1_name = [r1.split('/')[-1] for r1 in fastq_path["fastp"]["R1"]],
-    #     R2_name = [r2.split('/')[-1] for r2 in fastq_path["fastp"]["R2"]],
-    #     destination = dir_path["destination"],
-    #     assemble_engine = args.engine,
-    #     settings=settings
-    # )
