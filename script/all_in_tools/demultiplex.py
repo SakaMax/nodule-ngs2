@@ -9,7 +9,7 @@ import json
 import logging
 import os
 import sys
-from typing import List, None, NewType
+from typing import List , NewType
 
 import numpy as np
 import pandas as pd

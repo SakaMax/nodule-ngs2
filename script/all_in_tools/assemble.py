@@ -4,7 +4,7 @@
 import logging
 import os
 import subprocess
-from typing import Dict, List, NewType, None
+from typing import Dict, List, NewType 
 
 from tqdm.std import tqdm
 

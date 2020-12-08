@@ -2,7 +2,7 @@ import logging
 import os
 import shutil
 import subprocess
-from typing import Dict, List, None, NewType
+from typing import Dict, List , NewType
 
 PathStr = NewType('PathStr', str)
 
