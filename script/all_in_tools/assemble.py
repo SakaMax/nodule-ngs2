@@ -4,7 +4,7 @@
 import logging
 import os
 import subprocess
-from typing import Dict, List, NewType, NoReturn
+from typing import Dict, List, NewType, None
 
 from tqdm.std import tqdm
 
@@ -20,7 +20,7 @@ class Assembler():
         R1_path: PathStr,
         R2_path: PathStr,
         params: List
-        ) -> NoReturn:
+        ) -> None:
         self.fasta_name = fasta_name
         self.R1_path = R1_path
         self.R2_path = R2_path
@@ -37,7 +37,7 @@ class Assembler():
 class Megahit(Assembler):
     """Assembler(megahit)
     """
-    def __init__(self, *args, **kwargs) -> NoReturn:
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
     
     def assemble(self) -> FASTA:
@@ -113,7 +113,7 @@ def assemble_all(
     destination: PathStr,
     assemble_engine: str,
     settings: Dict
-    ) -> NoReturn:
+    ) -> None:
     """Assemble all sequences in one cell.
 
     Arguments:
@@ -180,7 +180,7 @@ def assemble_individually(
     destination: PathStr,
     assemble_engine: str,
     settings: Dict
-    ) -> NoReturn:
+    ) -> None:
     """Assemble sequences in one cell individually.
 
     Arguments:

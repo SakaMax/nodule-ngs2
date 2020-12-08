@@ -2,7 +2,7 @@ import logging
 import os
 import shutil
 import subprocess
-from typing import Dict, List, NoReturn, NewType
+from typing import Dict, List, None, NewType
 
 PathStr = NewType('PathStr', str)
 
@@ -12,7 +12,7 @@ def fastp(
     destination: PathStr,
     report_dest: PathStr,
     settings: Dict,
-) -> NoReturn:
+) -> None:
     """Run fastp to quality filtering
 
     Arguments:

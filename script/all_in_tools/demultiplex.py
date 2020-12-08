@@ -9,7 +9,7 @@ import json
 import logging
 import os
 import sys
-from typing import List, NoReturn, NewType
+from typing import List, None, NewType
 
 import numpy as np
 import pandas as pd
@@ -22,7 +22,7 @@ def demultiplex(
     R2_fastq: List[PathStr],
     cells_json: PathStr,
     destination: PathStr,
-) -> NoReturn:
+) -> None:
     """Demultiplex fastq file (after fastp)
 
     Arguments:

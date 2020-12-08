@@ -35,7 +35,7 @@ import os
 import pickle
 from pprint import pformat, pprint
 import sys
-from typing import Dict, List, Callable, NamedTuple, NoReturn, Tuple
+from typing import Dict, List, Callable, NamedTuple, None, Tuple
 
 from ruamel.yaml import YAML
 
@@ -304,7 +304,7 @@ class AllIn():
         fastq_path(dict): dict of path to fastq sequences
         step_counter(int): which step should this object run.
     """
-    def __init__(self, args: argparse.Namespace) -> NoReturn:
+    def __init__(self, args: argparse.Namespace) -> None:
         # Store arguments
         self.args = args
 
@@ -390,7 +390,7 @@ class AllIn():
             #     self.step_counter = count + 1
             #     yield self.step_counter
 
-    def _step1(self):
+    def _step1(self) -> None:
         """Cutadapt for tag recognition
         
         """

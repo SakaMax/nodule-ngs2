@@ -1,7 +1,7 @@
 import logging
 import os
 import subprocess
-from typing import List, NoReturn, NewType
+from typing import List, None, NewType
 
 PathStr = NewType('PathStr', str)
 
@@ -11,7 +11,7 @@ def cutadapt_tag(
     forward_tag: PathStr,
     reverse_tag: PathStr,
     destination: PathStr,
-) -> NoReturn:
+) -> None:
     """Run cutadapt to recognize tag
 
     This function execute cutadapt and store tag-removed fastq in destination/tag_removed.
@@ -89,7 +89,7 @@ def cutadapt_primer(
     forward_primer: PathStr,
     reverse_primer: PathStr,
     destination: PathStr,
-) -> NoReturn:
+) -> None:
     """Run cutadapt to remove common primers
 
     This function execute cutadapt and store primer-removed fastq in destination/primer_removed.
