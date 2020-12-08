@@ -35,7 +35,7 @@ import os
 import pickle
 from pprint import pformat, pprint
 import sys
-from typing import Dict, List, Callable, NamedTuple, None, Tuple
+from typing import Dict, Callable, NamedTuple, Tuple
 
 from ruamel.yaml import YAML
 
@@ -402,7 +402,7 @@ class AllIn():
             destination=self.dir_path["destination"]
         )
 
-    def _step2(self):
+    def _step2(self) -> None:
         """Cutadapt for common primer
         """
         tools.cutadapt.cutadapt_primer(
@@ -413,7 +413,7 @@ class AllIn():
             destination=self.dir_path["destination"]
         )
 
-    def _step3(self):
+    def _step3(self) -> None:
         """Quality filtering by fastp
         """
         tools.fastp.fastp(
@@ -424,7 +424,7 @@ class AllIn():
             settings=self.settings
         )
 
-    def _step4(self):
+    def _step4(self) -> None:
         """Demultiplex
         """
         tools.demultiplex.demultiplex(
@@ -434,7 +434,7 @@ class AllIn():
             destination=self.dir_path["destination"]
         )
 
-    def _step5(self):
+    def _step5(self) -> None:
         """Assemble (Using all sequences at one time)
         """
         tools.assemble.assemble_all(
@@ -445,7 +445,7 @@ class AllIn():
             settings=self.settings
         )
 
-    def _step6(self):
+    def _step6(self) -> None:
         tools.assemble.assemble_individually(
             R1_name = [r1.split('/')[-1] for r1 in self.fastq_path["fastp"]["R1"]],
             R2_name = [r2.split('/')[-1] for r2 in self.fastq_path["fastp"]["R2"]],
@@ -479,7 +479,7 @@ class AllInManager():
             self._all_in = AllIn(args)
             self._all_in.logger.info("All_In intialized")
 
-    def run(self):
+    def run(self) -> None:
         """Run the script
         """
         # step_info is WorkflowFunctionInfo.
@@ -505,7 +505,7 @@ class AllInManager():
             # Create checkpoint for test
             self._create_checkpoint("after_all")
 
-    def _create_checkpoint(self, name):
+    def _create_checkpoint(self, name) -> None:
         """Save self._all_in to 'destination/name.checkpoint'
 
         Arguments:
