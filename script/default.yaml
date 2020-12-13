@@ -106,7 +106,7 @@ blastn: [
   "-db",
   "XXXX/XXXX"
 ]
-blastn_header: [
+blast_header: [
   qaccver,
   saccver,
   pident,
