@@ -1,9 +1,9 @@
 import logging
 import os
 import subprocess
-from typing import List, NewType
+from typing import List
 
-PathStr = NewType('PathStr', str)
+from my_types import *
 
 def cutadapt_tag(
     R1_fastq: List[PathStr],

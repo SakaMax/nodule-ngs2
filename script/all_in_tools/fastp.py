@@ -2,9 +2,9 @@ import logging
 import os
 import shutil
 import subprocess
-from typing import Dict, List , NewType
+from typing import Dict, List
 
-PathStr = NewType('PathStr', str)
+from my_types import *
 
 def fastp(
     R1_fastq: List[PathStr],

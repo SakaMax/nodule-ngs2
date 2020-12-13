@@ -6,31 +6,13 @@ import os
 from pathlib import Path
 import subprocess
 import tempfile
-from typing import Dict, List, NamedTuple, NewType, Optional, Union
+from typing import Dict, List, NamedTuple, Optional, Union
 import sys
-from numpy.lib.arraysetops import isin
 
 import pandas as pd
 from tqdm.std import tqdm
 
-# Type alias
-FASTA = str
-PathStr = str
-BlastResultDF = pd.DataFrame
-
-class BlastResultInfo(NamedTuple):
-    """Blast result and additional infomation.
-
-    Attributes:
-        result(BlastResultDF): search result.
-        query_file(PathStr): query fasta file.
-        query_name(str): query name i.e. >THIS
-        query_seq(str): DNA sequence used.
-    """
-    result: BlastResultDF
-    query_file: PathStr
-    query_name: str
-    query_seq: str
+from my_types import *
 
 class Blastn():
     """Blastn search engine.
@@ -258,6 +240,50 @@ class Blastn():
         else:
             self.logger.error("blast_search got {}: why?".format(type(query)))
             return None
+
+def blast_all(
+    destination: PathStr,
+    settings: Dict
+    ) -> dict[str: Optional[BlastResultInfo]]:
+    """Blastn search, using all_contigs.fasta
+    
+    Arguments:
+        destination(PathStr): path to the data folder
+        settings(dict): settings from yaml
+
+    Returns:
+        dict[str: Optional[BlastResultInfo]]: cell_name: result of blast search
+    """
+    logger = logging.getLogger("all_in.blast_all")
+    logger.debug("assemble_all called.")
+
+    # Initialize blast
+
+    blast = Blastn(
+        settings=settings,
+        params=settings["blastn"]
+    )
+
+    # Initialize result dict
+    result_dict = dict()
+
+    # Scan cells directory
+    cells_dir = os.path.join(destination, "cells")
+    with os.scandir(cells_dir) as it:
+        for entry in tqdm(list(it), desc="blast search (all)"):
+            if entry.is_dir():
+                # Get cell name and the fasta file of final contigs
+                cell_name = entry.path.split('/')[-1]
+                contigs_path = os.path.join(cells_dir, cell_name, "all_contigs.fasta")
+
+                # Execute search
+                res = blast.blast_search(contigs_path)
+
+                # Update result
+                result_dict[cell_name] = res
+
+    return result_dict
+
 
 if __name__ == "__main__":
     # test

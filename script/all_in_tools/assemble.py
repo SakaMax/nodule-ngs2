@@ -8,8 +8,7 @@ from typing import Dict, List, NewType
 
 from tqdm.std import tqdm
 
-FASTA = NewType('FASTA',str)
-PathStr = NewType('PathStr', str)
+from my_types import *
 
 class Assembler():
     """Base class of specific assembler
@@ -214,7 +213,7 @@ def assemble_individually(
                 R1_fastq_path = [os.path.join(path, name) for name in R1_name]
                 R2_fastq_path = [os.path.join(path, name) for name in R2_name]
                 common_name = [os.path.commonprefix([R1.split('.')[0], R2.split('.')[0]])[:-2] for R1,R2 in zip(R1_name, R2_name)]
-                contigs_path = [os.path.join(path, name) + "_contigs.fasta" for name in common_name]
+                contigs_path = [os.path.join(path, name) + "_ind_contigs.fasta" for name in common_name]
                 logger.debug(
                     "path={}\nR1_fastq_path={}\nR2_fastq_path={}\ncontigs_path={}".format(
                         path, R1_fastq_path, R2_fastq_path, contigs_path
