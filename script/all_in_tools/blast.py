@@ -12,7 +12,7 @@ import sys
 import pandas as pd
 from tqdm.std import tqdm
 
-from my_types import *
+from all_in_tools.my_types import *
 
 class Blastn():
     """Blastn search engine.

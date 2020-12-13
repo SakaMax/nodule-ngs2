@@ -3,7 +3,7 @@ import os
 import subprocess
 from typing import List
 
-from my_types import *
+from all_in_tools.my_types import *
 
 def cutadapt_tag(
     R1_fastq: List[PathStr],

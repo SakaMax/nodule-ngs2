@@ -15,7 +15,7 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-from my_types import *
+from all_in_tools.my_types import *
 
 def demultiplex(
     R1_fastq: List[PathStr],
