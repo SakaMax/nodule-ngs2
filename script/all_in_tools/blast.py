@@ -3,17 +3,20 @@
 
 import logging
 import os
+from pathlib import Path
 import subprocess
 import tempfile
 from typing import Dict, List, NamedTuple, NewType, Optional, Union
+import sys
+from numpy.lib.arraysetops import isin
 
 import pandas as pd
 from tqdm.std import tqdm
 
 # Type alias
-FASTA = NewType('FASTA',str)
-PathStr = NewType('PathStr', str)
-BlastResultDF = NewType('BlastResultDF', pd.DataFrame)
+FASTA = str
+PathStr = str
+BlastResultDF = pd.DataFrame
 
 class BlastResultInfo(NamedTuple):
     """Blast result and additional infomation.
@@ -78,53 +81,69 @@ class Blastn():
 
         # Read query fasta
         with open(query, 'rt') as f:
-            fasta = f.read().split('\n')[-1]
-            query_dict = {fasta[i]: fasta[i+1] for i in range(len(fasta)/2)}
-
+            fasta = f.read().split('\n')[:-1]
+            query_dict = {fasta[i]: fasta[i+1] for i in range(0,len(fasta),2)}
+        self.logger.debug(query)
+        self.logger.debug(fasta)
+        self.logger.debug(query_dict)
         # Prepare result list
         result = list()
 
         # Search each sequence
-        for name, seq in query_dict:
-            q = '\n'.join(name,seq)
-            # Construct command
-            command_line = [
-                "blastn",
-                "-query",
-                q,
-                "-outfmt",
-                "10",
-                *self.params
-            ]
-
+        for name, seq in query_dict.items():
             # Work inside the context of tempfile.
-            with tempfile.TemporaryFile(mode="W+t") as tmp:
+            #with tempfile.TemporaryFile(mode="w+t") as tmp:
+            with open("search_test.csv", "w+t") as tmp_out, tempfile.NamedTemporaryFile('w+t') as tmp_seq:
+                # output sequence to tmp file
+                tmp_seq.write(seq)
+                tmp_seq.seek(0)
+                self.logger.debug(f"query file: \n{tmp_seq.read()}")
+                tmp_seq.seek(0)
+                # Construct command
+                command_line = [
+                    "blastn",
+                    "-query",
+                    tmp_seq.name,
+                    "-outfmt",
+                    "10",
+                    *self.params
+                ]
+                self.logger.debug("command_line: {}".format(command_line))
+
                 self.logger.debug("execute {}".format(command_line))
                 return_code = None
                 try:
                     # Execute
+                    # Input query seq(PIPE),
+                    # Write result to temporary file(tmp),
+                    # and get error from PIPE 
                     proc = subprocess.Popen(
                         command_line,
                         stdin=None,
-                        stdout=tmp,
-                        stderr=subprocess.STDOUT
+                        stdout=tmp_out,
+                        stderr=subprocess.PIPE
                     )
                     # Wait until search finished.
-                    return_code = proc.wait()
+                    # We will get no stdout
+                    _, err = proc.communicate()
+                    return_code = proc.returncode
                     # Seek to file head
-                    tmp.seek(0)
+                    tmp_out.seek(0)
 
                 except OSError as e:
-                    self.logger.error(tmp.read())
+                    self.logger.error(err)
                     self.logger.error("blastn returns {}".format(return_code))
                     self.logger.exception(e)
                     raise e
                 else:
+                    self.logger.debug(tmp_out.read())
+                    tmp_out.seek(0)
                     # Convert csv to DataFrame
-                    result_df = pd.read_csv(tmp, names=self.settings["blast_header"])
+                    result_df = pd.read_csv(tmp_out, names=self.settings["blast_header"])
                     result.append(
                         BlastResultInfo(result_df,query,name,seq)
                     )
+                    result_df.to_csv("1A01.csv")
         else:
             self.logger.debug("search end. result: {}".format(result))
         return result
@@ -140,14 +159,22 @@ class Blastn():
         """
         # sort result by evalue
         blastn_result.result.sort_values(
-            by="evalue", ascending=False, inplace=True)
+            by=["evalue"], inplace=True)
         
         # Get highest evalue and extract result that have highest evalue
-        highest_evalue = blastn_result.result.iloc[0,]["evalue"]
-        blastn_result.result = \
-            blastn_result.result[blastn_result.result["evalue"] == highest_evalue]
+        highest_evalue = blastn_result.result["evalue"].min()
+        highest_bitscore = blastn_result.result["bitscore"].max()
+        self.logger.debug(f"eval={highest_evalue}, bitscore={highest_bitscore}")
+        best_result: BlastResultInfo = BlastResultInfo(
+            blastn_result.result.query(
+                f"evalue == {highest_evalue} and bitscore == {highest_bitscore}"
+            ),
+            blastn_result.query_file,
+            blastn_result.query_name,
+            blastn_result.query_seq
+        )
 
-        return blastn_result
+        return best_result
 
     def _get_result_intersection(self, results: List[BlastResultDF]) ->  Optional[BlastResultDF]:
         """Return intersection of results.
@@ -187,9 +214,9 @@ class Blastn():
                 top_list.append(self._choose_highest_score(r))
             else:
                 # Select df that has highest e-value among top_list 
-                highest = max(
+                highest = min(
                     top_list,
-                    key=(lambda x: x.result.iloc[0,]["evalue"])
+                    key=(lambda x: x.result["evalue"].min())
                 )
                 res = highest
                 self.logger.debug("top_list: {}".format(top_list))
@@ -224,10 +251,37 @@ class Blastn():
         Returns:
             BlastResultDF: best match.
         """
-        if query is list:
+        if isinstance(query, list):
             return self._blast_search_multi(query)
-        elif query is PathStr:
+        elif isinstance(query, PathStr):
             return self._blast_search_single(query)
         else:
             self.logger.error("blast_search got {}: why?".format(type(query)))
             return None
+
+if __name__ == "__main__":
+    # test
+    logging.basicConfig(level=logging.DEBUG, filename="blast.log", filemode="w")
+    blast = Blastn(
+        {"blast_header": [
+            "qaccver",
+            "saccver",
+            "pident",
+            "length",
+            "mismatch",
+            "gapopen",
+            "qstart",
+            "qend",
+            "sstart",
+            "send",
+            "evalue",
+            "bitscore"
+        ]},
+        [
+        "-db",
+        "USDA/USDA"
+        ]
+    )
+    result = blast.blast_search(PathStr(sys.argv[1]))
+    print(result)
+    result.result.to_csv("result.csv")
