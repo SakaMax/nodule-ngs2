@@ -40,6 +40,7 @@ from typing import Dict, Callable, NamedTuple, Tuple
 from ruamel.yaml import YAML
 
 import all_in_tools as tools
+from all_in_tools.my_types import *
 
 def get_args() -> argparse.Namespace:
     """Read given arguments.
@@ -56,6 +57,7 @@ def get_args() -> argparse.Namespace:
         "--1st-read","-1",
         help="The first read of paired-end sequence (fastq file)",
         action='append',
+        required=True,
         dest="R1",
         metavar="R1.fastq"
     )
@@ -63,6 +65,7 @@ def get_args() -> argparse.Namespace:
         "--2nd_read", "-2",
         help="The second read of paired-end sequence (fastq file)",
         action='append',
+        required=True,
         dest="R2",
         metavar="R2.fastq"
     )
@@ -88,6 +91,14 @@ def get_args() -> argparse.Namespace:
         dest="resume",
         default=None,
         metavar="/path/to/checkpoint.json"
+    )
+    parser.add_argument(
+        "--override_settings_by", "-o",
+        help="override settings by this setting file when set with --resume_from",
+        action="store",
+        dest="override_yaml",
+        default=None,
+        metavar="/path/to/settings.yaml"
     )
 
     # load arguments
@@ -280,17 +291,7 @@ def construct_path(settings: dict, args: argparse.Namespace) -> Tuple[dict, dict
 
     return dir_dict, fastq_dict
 
-class WorkflowFunctionInfo(NamedTuple):
-    """The set of infomation AllIn.workflow_generator send.
 
-    Attributes:
-        function(callable): work in this step
-        name(str): name of this step
-        step(int): which step?
-    """
-    function: Callable
-    name: str
-    step: int
 
 
 class AllIn():
@@ -331,7 +332,8 @@ class AllIn():
             self._step3,
             self._step4,
             self._step5,
-            self._step6
+            self._step6,
+            self._step7
         ]
         self.step_name = [
             "cutadapt_tag",
@@ -339,7 +341,8 @@ class AllIn():
             "fastp",
             "demultiplex",
             "assemble_all",
-            "assemble_separete"
+            "assemble_separete",
+            "blast_all"
         ]
         
         # Set counter
@@ -453,6 +456,14 @@ class AllIn():
             assemble_engine = self.args.engine,
             settings=self.settings
         )
+    
+    def _step7(self) -> None:
+        """Blast search(all)
+        """
+        self.blast_all = tools.blast.blast_all(
+            destination = self.dir_path["destination"],
+            settings=self.settings
+        )
 
 class AllInManager():
     """Load/Save AllIn and run AllIn's workflow
@@ -468,6 +479,10 @@ class AllInManager():
             # resume point
             with open(args.resume, 'rb') as f:
                 self._all_in = pickle.load(f)
+
+            # If override flag is on, reload settings
+            if args.override_yaml is not None:
+                self._all_in.settings = read_settings(args.override_yaml)
 
             # re-setup logger
             self._all_in.logger = set_logger(
