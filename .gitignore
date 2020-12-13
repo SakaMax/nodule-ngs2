@@ -9,3 +9,6 @@ fastp.json
 *.pyc
 *.pickle
 settings.yaml
+*.fas
+*.txt
+*.csv
