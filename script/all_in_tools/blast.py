@@ -1,12 +1,12 @@
 """Blastn wrapper for all_in.py
 """
-
+from functools import reduce
 import logging
 import os
 from pathlib import Path
 import subprocess
 import tempfile
-from typing import Dict, List, NamedTuple, Optional, Union
+from typing import Dict, List, Optional, Set, Union
 import sys
 
 import pandas as pd
@@ -158,7 +158,7 @@ class Blastn():
 
         return best_result
 
-    def _get_result_intersection(self, results: List[BlastResultDF]) ->  Optional[BlastResultDF]:
+    def _get_result_intersection(self, results: List[BlastResultInfo]) ->  Optional[BlastResultInfo]:
         """Return intersection of results.
 
         Arguments:
@@ -170,7 +170,20 @@ class Blastn():
         Note:
             Returns can be one or None.
         """
-        pass
+        # Extract DataFrames and  strain names
+        # Each set contain names from one of the result
+        dfs: List[pd.DataFrame] = [r.result for r in results]
+        names: List[Set[str]] = [set(d["saccver"]) for d in dfs]
+
+        # Create union for further convolution process
+        union_names = set()
+        for s in names:
+            union_names = union_names | s
+
+        # Get intersection by convolution
+        f_and = lambda x,y: x & y
+        intersection: List[str] = list(reduce(f_and, names, union_names))
+
 
     def _blast_search_single(self, query: PathStr) -> Optional[BlastResultInfo]:
         """Execute blast search and return best result.
@@ -222,7 +235,38 @@ class Blastn():
             This is a private function.
             To execute search, use blast_search.
         """
-        pass
+        # Call _blast_search_single for each file,
+        # then get intersection
+
+        self.logger.debug("_blast_search_multi called.")
+        self.logger.debug(query_list)
+
+        # List for result
+        individual_result: List[BlastResultInfo] = list()
+
+        for query in query_list:
+            individual_result.append(
+                self._blast_search_single(query)
+            )
+        else:
+            # Remove None
+            filter_none = lambda x: True if x is not None else False
+            individual_result = filter(filter_none, individual_result)
+
+        # Extract result from individual_result        
+        final_result = None
+        if len(individual_result) == 0:
+            # There is no answer
+            pass
+        elif len(individual_result) == 1:
+            # Exactly one result: return this
+            final_result = individual_result[0]
+        else:
+            # There is more than one result
+            # Get intersection
+            final_result = self._get_result_intersection(individual_result)
+        
+        return final_result
 
     def blast_search(self, query: Union[PathStr, List[PathStr]]) -> Optional[BlastResultInfo]:
         """Execute blast search and return best result as BlastResult(pd.Series)
