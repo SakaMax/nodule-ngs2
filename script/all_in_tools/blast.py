@@ -122,9 +122,15 @@ class Blastn():
                     tmp_out.seek(0)
                     # Convert csv to DataFrame
                     result_df = pd.read_csv(tmp_out, names=self.settings["blast_header"])
+                    # Add origin of result to df
+                    result_df["origin_file"] = query
+                    result_df["sequence_name"] = name
+                    result_df["sequence"] = seq
+                    # Append result of this execution into return list
                     result.append(
                         BlastResultInfo(result_df,query,name,seq)
                     )
+                    # check result (for debug)
                     result_df.to_csv("1A01.csv")
         else:
             self.logger.debug("search end. result: {}".format(result))
