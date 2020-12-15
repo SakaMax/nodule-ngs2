@@ -244,7 +244,7 @@ class Blastn():
 def blast_all(
     destination: PathStr,
     settings: Dict
-    ) -> dict[str: Optional[BlastResultInfo]]:
+    ) -> Dict[str, Union[BlastResultInfo, None]]:
     """Blastn search, using all_contigs.fasta
     
     Arguments:
