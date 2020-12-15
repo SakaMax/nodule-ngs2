@@ -460,7 +460,7 @@ class AllIn():
     def _step7(self) -> None:
         """Blast search(all)
         """
-        self.blast_all = tools.blast.blast_all(
+        self.blast_all: dict[str: BlastResultInfo] = tools.blast.blast_all(
             destination = self.dir_path["destination"],
             settings=self.settings
         )
