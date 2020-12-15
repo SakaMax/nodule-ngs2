@@ -1,9 +1,9 @@
 """Blastn wrapper for all_in.py
 """
 from functools import reduce
+from glob import glob
 import logging
 import os
-from pathlib import Path
 import subprocess
 import tempfile
 from typing import Dict, List, Optional, Set, Union
@@ -12,7 +12,7 @@ import sys
 import pandas as pd
 from tqdm.std import tqdm
 
-from all_in_tools.my_types import *
+from my_types import *
 
 class Blastn():
     """Blastn search engine.
@@ -123,9 +123,9 @@ class Blastn():
                     # Convert csv to DataFrame
                     result_df = pd.read_csv(tmp_out, names=self.settings["blast_header"])
                     # Add origin of result to df
-                    result_df["origin_file"] = query
-                    result_df["sequence_name"] = name
-                    result_df["sequence"] = seq
+                    result_df["query_file"] = query
+                    result_df["query_name"] = name
+                    result_df["query_seq"] = seq
                     # Append result of this execution into return list
                     result.append(
                         BlastResultInfo(result_df,query,name,seq)
@@ -176,6 +176,7 @@ class Blastn():
         Note:
             Returns can be one or None.
         """
+        self.logger.debug("intersection called")
         # Extract DataFrames and  strain names
         # Each set contain names from one of the result
         dfs: List[pd.DataFrame] = [r.result for r in results]
@@ -187,9 +188,50 @@ class Blastn():
             union_names = union_names | s
 
         # Get intersection by convolution
-        f_and = lambda x,y: x & y
+        # f_and = lambda x,y: x & y
+        # intersection: List[str] = list(reduce(f_and, names, union_names))
+        def f_and(x,y):
+            inter = x & y
+            self.logger.debug(inter)
+            return inter
+        self.logger.debug(f"initial (union={len(union_names)}) : {union_names}")
         intersection: List[str] = list(reduce(f_and, names, union_names))
+        self.logger.debug(f"final (intersection={len(intersection)}): {intersection}")
 
+        if len(intersection) > 0:
+            # Prepare final result DataFrame
+            final_cols = self.settings["blast_header"] + ["query_file", "query_name", "query_seq"]
+            final_df = pd.DataFrame(index=[], columns=final_cols)
+
+            # Append appropriate record("saccver" of record <= intersection ) into final_df
+            # This is maybe a kind of convolution... 
+            for d in dfs:
+                final_df = pd.concat(
+                    [final_df, d[d["saccver"].isin(intersection)]]
+                )
+            
+            # Remove duplicated records
+            # Save one has highest evalue
+            final_df.sort_values(by=["evalue"], inplace=True)
+            final_df.to_csv("final_before_drop.csv")
+            final_df.drop_duplicates(subset="saccver", keep="first", inplace=True)
+
+            # set query_file, query_name, and query_seq by convined name
+            final_query_file = ":".join(list(final_df["query_file"].unique()))
+            final_query_name = ":".join(list(final_df["query_name"].unique()))
+            final_query_seq  = ":".join(list(final_df["query_seq"].unique()))
+
+            # return BlastResultInfo
+            return BlastResultInfo(
+                final_df,
+                final_query_file,
+                final_query_name,
+                final_query_seq,
+                True
+            )
+        else:
+            # No result
+            return None
 
     def _blast_search_single(self, query: PathStr) -> Optional[BlastResultInfo]:
         """Execute blast search and return best result.
@@ -257,7 +299,7 @@ class Blastn():
         else:
             # Remove None
             filter_none = lambda x: True if x is not None else False
-            individual_result = filter(filter_none, individual_result)
+            individual_result = list(filter(filter_none, individual_result))
 
         # Extract result from individual_result        
         final_result = None
@@ -334,12 +376,56 @@ def blast_all(
 
     return result_dict
 
+def blast_individual(
+    destination: PathStr,
+    settings: Dict
+    ) -> Dict[str, Union[BlastResultInfo, None]]:
+    """Blastn search, using *_ind_contigs.fasta
+    
+    Arguments:
+        destination(PathStr): path to the data folder
+        settings(dict): settings from yaml
+
+    Returns:
+        dict[str: Optional[BlastResultInfo]]: cell_name: result of blast search
+    """
+    logger = logging.getLogger("all_in.blast_individual")
+    logger.debug("assemble_individual called.")
+
+    # Initialize blast
+
+    blast = Blastn(
+        settings=settings,
+        params=settings["blastn"]
+    )
+
+    # Initialize result dict
+    result_dict = dict()
+
+    # Scan cells directory
+    cells_dir = os.path.join(destination, "cells")
+    with os.scandir(cells_dir) as it:
+        for entry in tqdm(list(it), desc="blast search (individual & intersection)"):
+            if entry.is_dir():
+                # Get cell name and the fasta file of final contigs
+                cell_name = entry.path.split('/')[-1]
+                contigs_path_list = glob(
+                    os.path.join(cells_dir, cell_name, "*_ind_contigs.fasta")
+                )
+
+                # Execute blastn
+                res = blast.blast_search(contigs_path_list)
+
+                # Update result
+                result_dict[cell_name] = res
+    
+    return result_dict
 
 if __name__ == "__main__":
     # test
     logging.basicConfig(level=logging.DEBUG, filename="blast.log", filemode="w")
-    blast = Blastn(
-        {"blast_header": [
+    mock_settings = {
+        "blast_header": [
             "qaccver",
             "saccver",
             "pident",
@@ -352,12 +438,16 @@ if __name__ == "__main__":
             "send",
             "evalue",
             "bitscore"
-        ]},
-        [
-        "-db",
-        "USDA/USDA"
-        ]
-    )
-    result = blast.blast_search(PathStr(sys.argv[1]))
-    print(result)
-    result.result.to_csv("result.csv")
+        ],
+        "blastn": [
+            "-db",
+            "USDA/USDA"
+            ]
+        }
+
+    result_all = blast_all(sys.argv[1], mock_settings)
+    result_ind = blast_individual(sys.argv[1], mock_settings)
+    print(result_all)
+    print("--------")
+    print(result_ind)
+    result_ind["a_cell"].result.to_csv("result.csv")
