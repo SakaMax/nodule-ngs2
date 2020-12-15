@@ -21,6 +21,7 @@ class BlastResultInfo(NamedTuple):
     query_file: PathStr
     query_name: str
     query_seq: str
+    intersection: bool = False
 
 class WorkflowFunctionInfo(NamedTuple):
     """The set of infomation AllIn.workflow_generator send.
