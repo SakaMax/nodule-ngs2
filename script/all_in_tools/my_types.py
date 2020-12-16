@@ -16,6 +16,7 @@ class BlastResultInfo(NamedTuple):
         query_file(PathStr): query fasta file.
         query_name(str): query name i.e. >THIS
         query_seq(str): DNA sequence used.
+        intersection(bool, default False): is this result from intersection of several results?
     """
     result: BlastResultDF
     query_file: PathStr
