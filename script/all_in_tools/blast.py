@@ -12,7 +12,10 @@ import sys
 import pandas as pd
 from tqdm.std import tqdm
 
-from my_types import *
+if __name__ == "__main__":
+    from my_types import *
+else:
+    from all_in_tools.my_types import *
 
 class Blastn():
     """Blastn search engine.
