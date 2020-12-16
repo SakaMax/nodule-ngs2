@@ -591,7 +591,7 @@ if __name__ == "__main__":
     # Before each step, the manager automatically create checkpoints
     manager.run()
 
-    # tools.save_result.save_result(
-    #     manager._all_in.blast_all,
-    #     "all_result.csv"
-    # )
+    tools.save_result.save_result(
+        manager._all_in.blast_all,
+        "all_result.csv"
+    )

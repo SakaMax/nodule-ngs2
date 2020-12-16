@@ -49,17 +49,17 @@ def save_result(
             cell_path = os.path.dirname(info.query_file)
 
         with open(os.path.join(cell_path, "tmp_R1.fastq"), "rt") as f:
-            raw_count = len(f.read())//4
+            raw_count = len(f.read().split('\n'))//4
         
         # Count query sequences
         if info.intersection:
             query_count = 0
             for q in info.query_file.split(':'):
                 with open(q, "rt") as f:
-                    query_count += len(f.read())//2
+                    query_count += len(f.read().split('\n'))//2
         else:
             with open(info.query_file, "rt") as f:
-                query_count = len(f.read())//2
+                query_count = len(f.read().split('\n'))//2
         
 
         # Separate top and other candidate
@@ -90,7 +90,7 @@ def save_result(
         result_df.sort_values(["plate", "cell"], inplace=True)
 
         # Filter result if filter is given
-        result_df.query(filter_query, inplace=True)
+        result_df.query(filter_query, inplace=True) if filter_query is not None else None
 
         # write result
         if out_csv_path is None:
