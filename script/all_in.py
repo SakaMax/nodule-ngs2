@@ -85,6 +85,14 @@ def get_args() -> argparse.Namespace:
         metavar="/path/to/settings.yaml"
     )
     parser.add_argument(
+        "--output", "-o",
+        help="file to save result",
+        action="store",
+        dest="output",
+        default=None,
+        metavar="/path/to/result.csv"
+    )
+    parser.add_argument(
         "--resume_from", "-r",
         help="resume from the previous checkpoint",
         action="store",
@@ -93,7 +101,7 @@ def get_args() -> argparse.Namespace:
         metavar="/path/to/checkpoint.json"
     )
     parser.add_argument(
-        "--override_settings_by", "-o",
+        "--override_settings_by",
         help="override settings by this setting file when set with --resume_from",
         action="store",
         dest="override_yaml",
@@ -346,7 +354,7 @@ class AllIn():
             "assemble_separete",
             "blast_all",
             "blast_separate",
-            "marge results"
+            "marge_results"
         ]
         
         # Set counter
@@ -486,6 +494,19 @@ class AllIn():
             self.blast_all[cell] if self.blast_all[cell] is not None else self.blast_individual[cell]\
             for cell in self.blast_all.keys()
         }
+    
+    def _step10(self) -> None:
+        """Save result
+        """
+        if "filter" in self.settings.keys():
+            filter_ = self.settings["filter"]
+        else:
+            filter_ = None
+        tools.save_result.save_result(
+            self.blast_all,
+            self.args.output,
+            filter_
+        )
 
 class AllInManager():
     """Load/Save AllIn and run AllIn's workflow
@@ -570,7 +591,7 @@ if __name__ == "__main__":
     # Before each step, the manager automatically create checkpoints
     manager.run()
 
-    manager._all_in.logger.debug(f">>>>\n{manager._all_in.blast_result}\n<<<<")
-    for k, v in manager._all_in.blast_result.items():
-        if v is None:
-            print(f"{k} has no result!")
+    # tools.save_result.save_result(
+    #     manager._all_in.blast_all,
+    #     "all_result.csv"
+    # )
