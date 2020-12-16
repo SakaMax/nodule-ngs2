@@ -35,7 +35,7 @@ import os
 import pickle
 from pprint import pformat, pprint
 import sys
-from typing import Dict, Callable, NamedTuple, Tuple
+from typing import Dict, Tuple, Optional
 
 from ruamel.yaml import YAML
 
@@ -333,7 +333,9 @@ class AllIn():
             self._step4,
             self._step5,
             self._step6,
-            self._step7
+            self._step7,
+            self._step8,
+            self._step9
         ]
         self.step_name = [
             "cutadapt_tag",
@@ -342,7 +344,9 @@ class AllIn():
             "demultiplex",
             "assemble_all",
             "assemble_separete",
-            "blast_all"
+            "blast_all",
+            "blast_separate",
+            "marge results"
         ]
         
         # Set counter
@@ -460,10 +464,28 @@ class AllIn():
     def _step7(self) -> None:
         """Blast search(all)
         """
-        self.blast_all: dict[str: BlastResultInfo] = tools.blast.blast_all(
+        self.blast_all: dict[str, Optional[BlastResultInfo]] = tools.blast.blast_all(
             destination = self.dir_path["destination"],
             settings=self.settings
         )
+    
+    def _step8(self) -> None:
+        """Blast search(individual & intersection)
+        """
+        self.blast_individual: dict[str, Optional[BlastResultInfo]] = tools.blast.blast_individual(
+            destination=self.dir_path["destination"],
+            settings=self.settings
+        )
+    
+    def _step9(self) -> None:
+        """Marge two blast result in one
+        Priority: blast_all > blast_individual
+        """
+        self.blast_result: dict[str, Optional[BlastResultInfo]] = {
+            cell : \
+            self.blast_all[cell] if self.blast_all[cell] is not None else self.blast_individual[cell]\
+            for cell in self.blast_all.keys()
+        }
 
 class AllInManager():
     """Load/Save AllIn and run AllIn's workflow
@@ -547,3 +569,8 @@ if __name__ == "__main__":
     # Start actual script
     # Before each step, the manager automatically create checkpoints
     manager.run()
+
+    manager._all_in.logger.debug(f">>>>\n{manager._all_in.blast_result}\n<<<<")
+    for k, v in manager._all_in.blast_result.items():
+        if v is None:
+            print(f"{k} has no result!")
