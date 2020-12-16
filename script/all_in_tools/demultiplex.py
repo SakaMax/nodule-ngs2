@@ -89,7 +89,7 @@ def demultiplex(
             [pd.DataFrame(dict_r1), pd.DataFrame(dict_r2)],
             axis=1
         )
-        #sequence_df.to_csv("test_df.csv")
+        sequence_df.to_csv(f"log/{R1_name[:-1]}.csv")
         logger.debug(sequence_df.head())
 
         # split sequence_df into cell dfs
@@ -128,6 +128,8 @@ def demultiplex(
         for i in range(0,6):
             print("\t==== Reads in plate No. {} ====".format(i+1))
             print(plate[i])
+            logger.debug("\t==== Reads in plate No. {} ====\n{}".format(i+1, plate[i]))
+            plate[i].to_csv(f"log/{R1_name[:-1]}_{i}.csv")
         else:
             print("Empty cells : {}".format(empty_cells))
 
