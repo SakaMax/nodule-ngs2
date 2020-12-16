@@ -219,6 +219,12 @@ def assemble_individually(
                         path, R1_fastq_path, R2_fastq_path, contigs_path
                     )
                 )
+
+                # If all_contigs.fasta has >0 contig(s), continue
+                with open(os.path.join(path, "all_contigs.fasta"), "rt") as f:
+                    if len(f.read()) > 0:
+                        continue
+
                 # Run assembler for each pair
                 for R1, R2, name, contig in zip(R1_fastq_path, R2_fastq_path, common_name, contigs_path):
                     # Construct assembler
