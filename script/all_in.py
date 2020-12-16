@@ -343,7 +343,8 @@ class AllIn():
             self._step6,
             self._step7,
             self._step8,
-            self._step9
+            self._step9,
+            self._step10
         ]
         self.step_name = [
             "cutadapt_tag",
@@ -354,7 +355,8 @@ class AllIn():
             "assemble_separete",
             "blast_all",
             "blast_separate",
-            "marge_results"
+            "marge_results",
+            "output_results"
         ]
         
         # Set counter
@@ -591,7 +593,7 @@ if __name__ == "__main__":
     # Before each step, the manager automatically create checkpoints
     manager.run()
 
-    tools.save_result.save_result(
-        manager._all_in.blast_all,
-        "all_result.csv"
-    )
+    # tools.save_result.save_result(
+    #     manager._all_in.blast_all,
+    #     "all_result.csv"
+    # )
