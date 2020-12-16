@@ -383,7 +383,7 @@ class AllIn():
             range(start, len(self.step_func)),
             self.step_name[start:len(self.step_func)]
         ):
-            print("before yield {}".format(name))
+            #print("before yield {}".format(name))
             # yield {
             #     "function": func,
             #     "name" : name,
@@ -394,7 +394,7 @@ class AllIn():
                 name=name,
                 step=count+1,
             )
-            print("after yield {}".format(name))
+            #print("after yield {}".format(name))
             self.step_counter = count + 1
             # try:
             #     self.logger.info("====STEP {}: {}====".format(count+1,name))
