@@ -54,7 +54,7 @@ def get_args() -> argparse.Namespace:
 
     # Add arguments
     parser.add_argument(
-        "--1st-read","-1",
+        "--1st_read","-1",
         help="The first read of paired-end sequence (fastq file)",
         action='append',
         required=True,
