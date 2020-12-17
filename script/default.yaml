@@ -16,6 +16,8 @@
 #   data      - path to source, destination
 #   fastp     - "fastp" parameters
 #   assembler - "SKESA", "megahit", "SPAdes" parameters 
+#   blast     - blast parameters
+#   filter    - result filter
 #
 # ===============================================================
 
@@ -120,3 +122,11 @@ blast_header: [
   evalue,
   bitscore
 ]
+
+#===============================================================
+# filter section
+#===============================================================
+# If you want to filter result, set option like below.
+# Format of the filter is same as the parameter of pandas.DataFrame.query.
+
+# filter: "pident > 98"
