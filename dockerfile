@@ -28,7 +28,7 @@ python3 -m pip install --user --upgrade cutadapt ruamel.yaml && \
 conda clean -a
 
 #create working folder
-RUN mkdir /ngs
+RUN mkdir -p /ngs/log
 
 #open port
 EXPOSE 80
