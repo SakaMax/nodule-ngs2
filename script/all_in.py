@@ -43,6 +43,18 @@ from ruamel.yaml import YAML
 import all_in_tools as tools
 from all_in_tools.my_types import *
 
+class ExitHandler(logging.FileHandler):
+    """Exit when this handler catch the message.
+    """
+    def __init__(self, filename: str, mode: str, encoding: Optional[str], delay: bool) -> None:
+        super().__init__(filename, mode=mode, encoding=encoding, delay=delay)
+
+    def emit(self, record: logging.LogRecord):
+        super().emit(record=record)
+        logging.StreamHandler().emit(record=record)
+        print(chr(7))
+        exit(1)
+
 def get_args() -> argparse.Namespace:
     """Read given arguments.
 
@@ -186,8 +198,13 @@ def set_logger(settings: dict, args: argparse.Namespace) -> logging.Logger:
     logger.setLevel(logging.DEBUG)
 
     # create log handler
+    # eh : ExitHandler
     # fh : filehandler
     # ch : consolehandler
+    eh = ExitHandler(
+        os.path.join(settings["logging_path"], settings["filename"]),
+        mode='a', encoding='utf-8', delay=True
+    )
     fh = logging.FileHandler(
         os.path.join(settings["logging_path"], settings["filename"]),
         mode=settings["logging_config"]["filemode"]
@@ -195,6 +212,7 @@ def set_logger(settings: dict, args: argparse.Namespace) -> logging.Logger:
     ch = logging.StreamHandler()
 
     # set logging level
+    eh.setLevel(logging.ERROR)
     fh.setLevel(levels[settings["logfile_level"]])
     ch.setLevel(levels[settings["console_level"]])
     
@@ -203,10 +221,12 @@ def set_logger(settings: dict, args: argparse.Namespace) -> logging.Logger:
         fmt=settings["logging_config"]["format"],
         datefmt=settings["logging_config"]["datefmt"]
     )
+    eh.setFormatter(formatter)
     fh.setFormatter(formatter)
     ch.setFormatter(formatter)
 
     # add handlers to logger
+    logger.addHandler(eh)
     logger.addHandler(fh)
     logger.addHandler(ch)
 
