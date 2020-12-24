@@ -58,6 +58,17 @@ data: {
   datetime_format: "%Y_%m%d_%H%M",
   cells_json: "source/cells.json"
 }
+# Check whether file names meet the criteria(pattern_check).
+# force|prompt|nocheck
+# force: exit if the name is wrong
+# prompt: ask if the name is wrong
+# nocheck: bypass checking (good for batch job)
+pattern_check: prompt
+
+file_pattern: {
+  R1: "R1",
+  R2: "R2"
+}
 
 #===============================================================
 # fastp section

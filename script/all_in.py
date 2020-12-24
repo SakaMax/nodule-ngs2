@@ -33,9 +33,10 @@ from datetime import datetime
 import logging
 import os
 import pickle
-from pprint import pformat, pprint
+from pprint import pformat
+import re
 import sys
-from typing import Dict, Tuple, Optional
+from typing import Dict, List, NoReturn, Tuple, Optional, Union
 
 from ruamel.yaml import YAML
 
@@ -299,7 +300,43 @@ def construct_path(settings: dict, args: argparse.Namespace) -> Tuple[dict, dict
 
     return dir_dict, fastq_dict
 
+def check_file_name(
+    path_list: List[PathStr],
+    pattern: str,
+    mode: str
+    ) -> Union[None, NoReturn]:
+    """Check if file name meets the criteria (pattern matching).
 
+    Arguments:
+        path_list(list[PathStr]): list of path to be checked.
+        pattern(str): pattern(re)
+        mode(str): check mode in settings(force|prompt|nocheck)
+    """
+    def _force(error, pattern) -> NoReturn:
+        logger = logging.getLogger("all_in.filechecker")
+        logging.error(f"Wrong file name:{error}")
+        logging.error(f"Expected: {pattern}")
+        exit(-1)
+    
+    def _prompt(error, pattern) -> bool:
+        in_dict = {"yes": True, "y": True, "no": False, "n": False}
+        while True:
+            ans = input(
+                f"file '{error}' does not match the pattern {pattern}. Do you want to continue? (yes/no)"
+            ).lower()
+            if ans in in_dict:
+                return in_dict[ans]
+
+    for p in path_list:
+        matched = re.search(pattern,p)
+        if not matched:
+            if mode == "force":
+                _force(p, pattern)
+            elif mode == "prompt":
+                if _prompt(p, pattern):
+                    continue
+                else:
+                    _force(p, pattern)
 
 
 class AllIn():
@@ -332,6 +369,18 @@ class AllIn():
 
         # Initialize the logger
         self.logger = set_logger(self.settings, args)
+
+        # Check file names
+        check_file_name(
+            args.R1,
+            self.settings.get("file_pattern").get("R1"),
+            self.settings.get("pattern_check", "force")
+        )
+        check_file_name(
+            args.R2,
+            self.settings.get("file_pattern").get("R2"),
+            self.settings.get("pattern_check", "force")
+        )
 
         # Set function list
         self.step_func = [
