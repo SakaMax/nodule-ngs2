@@ -257,16 +257,22 @@ class Blastn():
         if len(search_result) > 0:
             top_list: List[BlastResultInfo] = []
             for r in search_result:
+                # skip empty dataframe
+                if r.result.empty:
+                    continue
                 top_list.append(self._choose_highest_score(r))
             else:
-                # Select df that has highest e-value among top_list 
-                highest = min(
-                    top_list,
-                    key=(lambda x: x.result["evalue"].min())
-                )
-                res = highest
-                self.logger.debug("top_list: {}".format(top_list))
-                self.logger.debug("highest: {}".format(highest.result))
+                if top_list: # if there is more than zero result(s)
+                    # Select df that has highest e-value among top_list 
+                    highest = min(
+                        top_list,
+                        key=(lambda x: x.result["evalue"].min())
+                    )
+                    res = highest
+                    self.logger.debug("top_list: {}".format(top_list))
+                    self.logger.debug("highest: {}".format(highest.result))
+                else: # If there is no valid result
+                    res = None
         else:
             # If there is no hit, return None
             res = None
@@ -448,9 +454,12 @@ if __name__ == "__main__":
             ]
         }
 
-    result_all = blast_all(sys.argv[1], mock_settings)
-    result_ind = blast_individual(sys.argv[1], mock_settings)
-    print(result_all)
-    print("--------")
-    print(result_ind)
-    result_ind["a_cell"].result.to_csv("result.csv")
+    b = Blastn(mock_settings, mock_settings["blastn"])
+    print(b.blast_search("4C09.fasta"))
+
+    #result_all = blast_all(sys.argv[1], mock_settings)
+    #result_ind = blast_individual(sys.argv[1], mock_settings)
+    #print(result_all)
+    #print("--------")
+    #print(result_ind)
+    #result_ind["a_cell"].result.to_csv("result.csv")
