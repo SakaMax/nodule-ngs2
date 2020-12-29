@@ -1,2 +1,2 @@
 # nodule-ngs2
-Scripts for nodule NGS, including fastp, skesa, blast
+Scripts for nodule NGS, using cutadapt, fastp, assembler (megahit or SKESA or SPAdes), blast.
